@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070506"><title>Nosso Cantinho ❤️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080607;color:#fff;font-family:'DM Sans',sans-serif}.wrap{max-width:760px;margin:auto;padding:24px 18px 70px}.hero{text-align:center;min-height:72vh;display:flex;flex-direction:column;justify-content:center;align-items:center}.photo{width:180px;height:180px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.35);box-shadow:0 0 45px rgba(255,50,100,.35);background:#180d11}.tag{letter-spacing:.16em;font-size:11px;opacity:.65;margin-top:28px}.heart{font-size:42px;margin:18px 0 4px;animation:pulse 1.7s infinite}.hero h1{font-family:'Great Vibes',cursive;font-size:clamp(52px,14vw,88px);font-weight:400;margin:0}.hero h1 span{color:#ff6f9f}.hero p{max-width:560px;line-height:1.7;color:#d9cdd1;font-size:16px}.card{background:linear-gradient(145deg,#171013,#0f0b0d);border:1px solid #332329;border-radius:24px;padding:28px;margin:18px 0;box-shadow:0 20px 60px rgba(0,0,0,.25)}.card h2{margin:0 0 10px;font-size:25px}.card p{line-height:1.75;color:#d8cdd1;white-space:pre-wrap}.locked{position:relative;overflow:hidden}.locked:after{content:'🔒 Conteúdo completo';display:flex;align-items:center;justify-content:center;position:absolute;inset:0;background:rgba(8,6,7,.82);backdrop-filter:blur(6px);font-weight:700}.footer{text-align:center;opacity:.55;font-size:12px;margin-top:45px}.share{display:inline-block;margin-top:20px;padding:13px 20px;border-radius:999px;background:#fff;color:#100b0d;text-decoration:none;font-weight:800}.error{text-align:center;padding:80px 20px}.error h1{font-size:30px}@keyframes pulse{50%{transform:scale(1.08)}}
+</style></head><body><main class="wrap" id="app"></main><script>
+function decodeData(){try{const raw=location.hash.replace(/^#data=/,'');if(!raw)return null;return JSON.parse(decodeURIComponent(escape(atob(raw))))}catch(e){return null}}
+const d=decodeData(), app=document.getElementById('app');
+if(!d){app.innerHTML='<section class="error"><div class="heart">❤️</div><h1>Link inválido</h1><p>Esse link de demonstração não contém um site válido.</p></section>'}else{
+ const photo=d.photo||''; app.innerHTML=`<section class="hero"><img class="photo" src="${photo}" alt="Foto do casal"><div class="tag">PARA O MEU AMOR</div><div class="heart">❤️</div><h1>Oi, <span>${escapeHtml(d.loveName||'meu amor')}</span></h1><p>${escapeHtml(d.message||'Eu fiz esse cantinho especialmente para você.')}</p>${d.yourName?`<small>Com amor, ${escapeHtml(d.yourName)}</small>`:''}<a class="share" href="#" onclick="navigator.clipboard?.writeText(location.href);this.textContent='✓ Link copiado';return false">Copiar link</a></section>
+ <section class="card"><h2>💌 Uma mensagem para você</h2><p>${escapeHtml(d.message||'Uma mensagem especial para você.')}</p></section>
+ <section class="card locked"><h2>❤️ Nosso mundo</h2><p>Fotos, carta de amor, nossa história, 100 motivos e a surpresa final aparecem aqui na versão completa.</p></section>
+ <section class="card"><h2>🔐 Prévia gratuita</h2><p>Este é um link de teste criado pelo Amor em Site. O conteúdo completo é liberado após a compra do plano escolhido.</p></section>
+ <div class="footer">Amor em Site ♥ • Demonstração</div>`;
+}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+</script></body></html>
