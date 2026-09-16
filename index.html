@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Amor em Site — Criar site-presente</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:#0b0710;color:#fff}
+.wrap{max-width:900px;margin:auto;padding:28px 18px 60px}
+h1{font-size:clamp(28px,6vw,48px);margin:0 0 8px}.sub{color:#cbbfd0;line-height:1.6}
+.card{background:linear-gradient(145deg,#18101d,#100b14);border:1px solid #35233c;border-radius:24px;padding:22px;margin-top:18px;box-shadow:0 18px 60px #0008}
+label{display:block;margin:14px 0 7px;font-weight:700}input,textarea{width:100%;border:1px solid #49334f;background:#0f0a13;color:#fff;border-radius:14px;padding:13px;font:inherit}textarea{min-height:110px;resize:vertical}
+button{border:0;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer;background:#ff3f7f;color:#fff;margin-top:18px}
+.hint{font-size:13px;color:#aaa;margin-top:7px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+.preview{display:none;margin-top:20px}.ok{background:#132316;border:1px solid #285f31;padding:14px;border-radius:14px;color:#c9ffd0}
+code{color:#ff9fbd}.small{font-size:12px;color:#9d8fa2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>❤️ Criador do seu site-presente</h1>
+  <p class="sub">Preencha os dados, coloque as fotos e a música. O botão final gera <b>um único arquivo HTML</b> com tudo dentro dele, pronto para você publicar e mandar para sua namorada.</p>
+
+  <div class="card">
+    <div class="grid">
+      <div><label>Nome de quem recebe</label><input id="to" placeholder="Ex.: Emilly"></div>
+      <div><label>Seu nome</label><input id="from" placeholder="Ex.: Ricael"></div>
+    </div>
+    <label>Título</label><input id="title" value="Para o meu amor ❤️">
+    <label>Mensagem de abertura</label><textarea id="intro" placeholder="Escreva algo especial..."></textarea>
+    <div class="grid">
+      <div><label>Data especial</label><input id="date" type="date"></div>
+      <div><label>Música (MP3/áudio)</label><input id="audio" type="file" accept="audio/*"></div>
+    </div>
+    <label>Carta de amor</label><textarea id="letter" placeholder="Escreva sua carta..."></textarea>
+    <label>Nossa história</label><textarea id="story" placeholder="Conte a história de vocês..."></textarea>
+    <label>100 motivos (um por linha)</label><textarea id="reasons" placeholder="Porque você me faz sorrir&#10;Porque seu abraço é meu lugar favorito&#10;..."></textarea>
+    <label>Fotos do casal (pode selecionar várias)</label><input id="photos" type="file" accept="image/*" multiple>
+    <div class="hint">As fotos e o áudio serão incorporados ao arquivo final. Para evitar um arquivo enorme, prefira fotos comprimidas e uma música não muito pesada.</div>
+    <button id="generate">✨ Gerar meu site completo</button>
+    <div id="status" class="preview"></div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const readData=file=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)});
+function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+$('generate').onclick=async()=>{
+  const files=[...$('photos').files], audio=$('audio').files[0];
+  const to=esc($('to').value||'Meu amor'), from=esc($('from').value||'Seu amor');
+  const title=esc($('title').value||'Para o meu amor ❤️'), intro=esc($('intro').value);
+  const letter=esc($('letter').value), story=esc($('story').value), date=esc($('date').value);
+  const reasons=($('reasons').value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(esc);
+  if(!files.length){$('status').style.display='block';$('status').innerHTML='<div class="ok">Escolha pelo menos 1 foto antes de gerar.</div>';return}
+  $('status').style.display='block';$('status').innerHTML='<div class="ok">Preparando seu site... aguarde.</div>';
+  const imgs=await Promise.all(files.slice(0,20).map(readData));
+  const audioData=audio?await readData(audio):'';
+  const site=makeSite({to,from,title,intro,letter,story,date,reasons,imgs,audioData});
+  const blob=new Blob([site],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-site-presente.html';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  $('status').innerHTML='<div class="ok">✅ Site completo gerado! O arquivo <code>meu-site-presente.html</code> foi baixado. Envie esse arquivo para o GitHub Pages e ele poderá ser aberto pelo celular.</div>';
+};
+function makeSite(d){
+const gallery=d.imgs.map((x,i)=>`<img src="${x}" alt="Foto ${i+1}">`).join('');
+const rs=(d.reasons.length?d.reasons:Array.from({length:10},(_,i)=>`Porque eu amo você — motivo ${i+1}`)).map((x,i)=>`<div class="reason"><b>${String(i+1).padStart(2,'0')}</b><span>${x}</span></div>`).join('');
+const audio=d.audioData?`<audio id="music" src="${d.audioData}" loop></audio><button class="music" onclick="toggleMusic()">♫ Música</button>`:'';
+return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${d.title}</title>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at top,#3b1024,#09060a 45%,#050408);color:#fff;font-family:Georgia,serif;overflow-x:hidden}.hero{min-height:100vh;display:grid;place-items:center;text-align:center;padding:30px 18px;position:relative}.heart{font-size:70px;filter:drop-shadow(0 0 25px #ff3f7f);animation:pulse 1.8s infinite}.hero h1{font-size:clamp(42px,10vw,92px);margin:10px 0}.hero p{max-width:760px;margin:auto;font-size:clamp(18px,4vw,26px);line-height:1.7;color:#eadde4}.btn{display:inline-block;margin-top:26px;padding:14px 22px;border-radius:999px;background:#ff3f7f;color:#fff;text-decoration:none;font-weight:800}.section{max-width:1050px;margin:auto;padding:80px 18px}.section h2{text-align:center;font-size:clamp(30px,6vw,52px);margin:0 0 35px}.letter,.story{background:#ffffff0a;border:1px solid #ffffff18;border-radius:24px;padding:28px;line-height:1.9;font-size:18px;white-space:pre-wrap}.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.gallery img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:18px;box-shadow:0 10px 35px #0008}.reasons{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.reason{padding:18px;border:1px solid #ffffff15;background:#ffffff08;border-radius:16px;display:flex;gap:15px;line-height:1.5}.reason b{color:#ff7fa8}.final{text-align:center;padding:110px 18px}.final h2{font-size:clamp(38px,9vw,75px);margin:15px 0}.music{position:fixed;right:16px;bottom:16px;border:0;border-radius:999px;padding:13px 18px;background:#ff3f7f;color:#fff;font-weight:800;z-index:5}@keyframes pulse{50%{transform:scale(1.08)}}@media(max-width:600px){.section{padding:65px 15px}.letter,.story{font-size:16px;padding:20px}}
+</style></head><body>
+<section class="hero"><div><div class="heart">❤️</div><h1>${d.title}</h1><p>Oi, ${d.to}. ${d.intro}</p>${d.date?`<p>♡ ${d.date}</p>`:''}<a class="btn" href="#fotos">Entrar no nosso mundo</a></div>${audio}</section>
+<section class="section" id="fotos"><h2>Nossos momentos 📸</h2><div class="gallery">${gallery}</div></section>
+<section class="section"><h2>Uma carta para você 💌</h2><div class="letter">${d.letter||'Escreva aqui tudo aquilo que seu coração gostaria de dizer.'}</div></section>
+<section class="section"><h2>Nossa história 🕐</h2><div class="story">${d.story||'Nossa história ainda está sendo escrita — e eu quero viver cada capítulo ao seu lado.'}</div></section>
+<section class="section"><h2>Motivos para te amar ❤️</h2><div class="reasons">${rs}</div></section>
+<section class="final"><div class="heart">❤️</div><h2>Eu escolheria você<br>em todas as vidas.</h2><p>Com amor, ${d.from}.</p></section>
+<script>function toggleMusic(){const m=document.getElementById('music');if(!m)return;m.paused?m.play():m.pause()}</script>
+</body></html>`;
+}
+</script></body></html>
