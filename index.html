@@ -54,8 +54,8 @@ function openGift(){
 <div id="giftOverlay" class="gift-overlay">
   <div class="gift-box">
     <div class="gift-kicker">UMA SURPRESA PARA VOCÊ</div>
-    <h1>Emilly, isso é para você. ❤️</h1>
-    <p>Preparei cada detalhe pensando em você.</p>
+    <h1 id="giftTitle">Emilly, isso é para você. ❤️</h1>
+    <p id="giftSubtitle">Preparei cada detalhe pensando em você.</p>
     <button id="openGiftBtn" onclick="openGift()">❤️ ABRIR MEU PRESENTE</button>
   </div>
 </div>
@@ -63,7 +63,7 @@ function openGift(){
   <div id="hearts" aria-hidden="true"></div>
 
   <header class="navbar">
-    <a class="logo" href="#inicio">Para o meu amor <span>♡</span></a>
+    <a class="logo" id="siteLogo" href="#inicio">Para o meu amor <span>♡</span></a>
     <nav>
       <a href="#inicio">Início</a>
       <a href="#historia">Nossa História</a>
@@ -140,8 +140,8 @@ function openGift(){
       </button>
       <div class="letter-paper" id="letterPaper" aria-hidden="true">
         <span>Para você, meu amor.</span>
-        <h3>Eu te amo.</h3>
-        <p>Amor eu quero que você saiba que quero ficar contigo pra sempre, eu te prometo que não vou me afastar nunca de ti, eu nunca vou ficar bravo contigo ta? eu te amo neném, você vai ser pra sempre minha princesa.</p>
+        <h3 id="letterTitle">Eu te amo.</h3>
+        <p id="letterMessage">Amor eu quero que você saiba que quero ficar contigo pra sempre, eu te prometo que não vou me afastar nunca de ti, eu nunca vou ficar bravo contigo ta? eu te amo neném, você vai ser pra sempre minha princesa.</p>
         <p class="signature">Com todo meu amor,<br>sempre seu. ♥</p>
       </div>
     </section>
@@ -164,7 +164,7 @@ function openGift(){
         <div class="big-heart">♥</div>
         <span>PARA SEMPRE</span>
         <h2>Eu escolheria você<br><em>em todas as vidas.</em></h2>
-        <p>Te amo. ❤️</p>
+        <p id="finalLoveMessage">Te amo. ❤️</p>
       </div>
     </section>
   </main>
@@ -191,15 +191,102 @@ function openGift(){
   </div>
   <div class="message-card">
     <h3>Nossa história</h3>
-    <p>Quando te conheci, lá no início eu pensei que nunca fosse encontrar alguém que me completasse sabe? E você veio e preencheu todo esse espaço vazio, eu quero que você saiba que é muito importante pra mim.</p>
+    <p id="historyMessage">Quando te conheci, lá no início eu pensei que nunca fosse encontrar alguém que me completasse sabe? E você veio e preencheu todo esse espaço vazio, eu quero que você saiba que é muito importante pra mim.</p>
   </div>
   <div class="message-card">
     <h3>Por que eu amo você</h3>
     <div class="reasons">
-      <div class="reason"><span>❤️</span>Você me faz sorrir</div><div class="reason"><span>❤️</span>Está comigo nos momentos que estou mal...</div><div class="reason"><span>❤️</span>Você é atenciosa</div><div class="reason"><span>❤️</span>Especial</div><div class="reason"><span>❤️</span>Linda demais</div><div class="reason"><span>❤️</span>Uma princesa que a Disney não tem ksksksk</div><div class="reason"><span>❤️</span>Nós vamos ficar pra sempre entendeuuuu</div><div class="reason"><span>❤️</span>GOSTOSAAAAAAAAA</div>
+      <div class="reason"><span>❤️</span><span id="reasonExtra1">Você me faz sorrir</span></div><div class="reason"><span>❤️</span><span id="reasonExtra2">Está comigo nos momentos que estou mal...</span></div><div class="reason"><span>❤️</span><span id="reasonExtra3">Você é atenciosa</span></div><div class="reason"><span>❤️</span>Especial</div><div class="reason"><span>❤️</span>Linda demais</div><div class="reason"><span>❤️</span>Uma princesa que a Disney não tem ksksksk</div><div class="reason"><span>❤️</span>Nós vamos ficar pra sempre entendeuuuu</div><div class="reason"><span>❤️</span>GOSTOSAAAAAAAAA</div>
     </div>
   </div>
 </section>
+
+
+<script>
+(function () {
+  const API_URL = "https://amor-em-site-backend.vercel.app";
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get("order") || params.get("pedido");
+
+  // Sem pedido na URL: mantém o site original exatamente como está.
+  if (!orderId) return;
+
+  const $ = (id) => document.getElementById(id);
+
+  function setText(id, value) {
+    const el = $(id);
+    if (el && value != null && String(value).trim()) {
+      el.textContent = String(value);
+    }
+  }
+
+  function personalize(order) {
+    const name = String(order.love_name || "meu amor").trim();
+    const message = String(order.love_message || "").trim();
+
+    setText("siteLogo", name + " ♥");
+    setText("giftTitle", name + ", isso é para você. ❤️");
+    setText("giftSubtitle", message || "Preparei cada detalhe pensando em você.");
+    setText("letterTitle", "Eu te amo, " + name + ".");
+    setText("letterMessage", message || null);
+    setText("finalLoveMessage", "Te amo, " + name + ". ❤️");
+
+    setText("historyMessage", order.love_story);
+
+    setText("reasonExtra1", order.reason_1);
+    setText("reasonExtra2", order.reason_2);
+    setText("reasonExtra3", order.reason_3);
+
+    document.title = "Para " + name + " ❤️";
+
+    // Se o backend já criou o slug definitivo, deixa a URL limpa.
+    if (order.site_slug) {
+      const cleanUrl =
+        window.location.origin +
+        window.location.pathname +
+        "?pedido=" + encodeURIComponent(order.site_slug);
+
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }
+
+  async function loadOrder(attempt) {
+    try {
+      const query = params.get("pedido")
+        ? "?pedido=" + encodeURIComponent(params.get("pedido"))
+        : "?order=" + encodeURIComponent(orderId);
+
+      const response = await fetch(API_URL + "/api/get-order" + query, {
+        cache: "no-store"
+      });
+
+      const data = await response.json();
+
+      if (
+        response.ok &&
+        data &&
+        data.ok &&
+        data.order &&
+        data.order.status === "PAID"
+      ) {
+        personalize(data.order);
+        return;
+      }
+
+      // O webhook pode levar alguns segundos para confirmar o pagamento.
+      if (attempt < 12) {
+        setTimeout(() => loadOrder(attempt + 1), 1500);
+      }
+    } catch (error) {
+      if (attempt < 12) {
+        setTimeout(() => loadOrder(attempt + 1), 1500);
+      }
+    }
+  }
+
+  loadOrder(0);
+})();
+</script>
 
 </body>
 </html>
