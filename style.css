@@ -1570,3 +1570,11 @@ img {
 @media(max-width:600px){
   .love-preview .preview-photo { border-radius: 20px !important; }
 }
+
+/* Oculta somente os controles de deslocamento horizontal e vertical. */
+.photo-control:has(input[id="photoX"]),
+.photo-control:has(input[id="photoY"]),
+.photo-control:has(input[id="photoPositionX"]),
+.photo-control:has(input[id="photoPositionY"]) {
+  display: none !important;
+}
