@@ -1540,38 +1540,33 @@ img {
   .love-preview .preview-photo img { border-radius: 20px 20px 0 0; }
 }
 
-
-/* FOTO COM MOLDURA AJUSTADA AO TAMANHO REAL — 04/11/2026 */
-/* O elemento da foto encolhe até a largura natural da imagem; a aba continua abaixo. */
-.love-preview .preview-photo:has(img[src]:not([src=""])) {
-  width: fit-content !important;
-  max-width: 100% !important;
+/* Correção do editor: moldura muda com os botões de proporção. */
+.love-preview .preview-photo {
+  width: min(100%, 416px) !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  aspect-ratio: auto !important;
-  display: block !important;
+  aspect-ratio: 4 / 5;
   margin: 0 auto !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border-radius: 24px !important;
-  background: transparent !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.25) !important;
-  touch-action: pan-y;
-}
-.love-preview .preview-photo:has(img[src]:not([src=""])) img {
   display: block !important;
-  width: auto !important;
-  max-width: 100% !important;
-  height: auto !important;
-  max-height: min(70vh, 620px) !important;
-  object-fit: contain !important;
-  object-position: center !important;
+  position: relative;
+  overflow: hidden;
   border-radius: 24px !important;
-  transform: none !important;
+  background: #16070c;
+  touch-action: none;
 }
-@media (max-width:600px) {
-  .love-preview .preview-photo:has(img[src]:not([src=""])) img {
-    max-height: min(65vh, 520px) !important;
-  }
+.love-preview .preview-photo img {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  inset: 0;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  border-radius: 24px;
+  transform-origin: center;
+}
+@media(max-width:600px){
+  .love-preview .preview-photo { border-radius: 20px !important; }
 }

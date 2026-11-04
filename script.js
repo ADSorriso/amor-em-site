@@ -467,6 +467,13 @@ function applyPhotoEditor() {
   const x = Number(photoX?.value || 50);
   const y = Number(photoY?.value || 20);
 
+  // A largura da moldura acompanha o formato selecionado, sem faixas enormes.
+  const [ratioW, ratioH] = photoRatio.split("/").map(Number);
+  const ratio = ratioW / ratioH;
+  const availableWidth = previewPhoto.parentElement?.clientWidth || 600;
+  const maxFrameHeight = window.innerWidth <= 600 ? 500 : 520;
+  const frameWidth = Math.min(availableWidth, maxFrameHeight * ratio);
+  previewPhoto.style.setProperty("width", `${frameWidth}px`, "important");
   previewPhoto.style.aspectRatio = photoRatio;
 
   if (previewPhotoImage) {
@@ -1601,9 +1608,6 @@ async function openPreviewForPlan(planKey) {
     return;
   }
 
-  // Marca que a abertura da prévia veio de uma ação do usuário.
-  // A página da prévia tentará iniciar a música assim que carregar.
-  sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
   window.location.href = "site.html?preview=1";
 }
 
@@ -1762,3 +1766,4 @@ updateCheckoutButton();
 
 console.log("❤️ Amor em Site iniciado");
 console.log("Backend:", API_URL);
+window.addEventListener("resize", applyPhotoEditor);

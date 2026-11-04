@@ -11,27 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=5">
-
-  <script>
-  // Compatibilidade: pagamentos criados antes da nova tela de sucesso
-  // ainda podem retornar para index.html?checkout=success&order=...
-  // Redirecionamos imediatamente para a nova experiência pós-pagamento.
-  (function () {
-    const p = new URLSearchParams(window.location.search);
-    const order = p.get("order");
-    const pedido = p.get("pedido");
-    const checkout = p.get("checkout");
-    if (pedido && !checkout) {
-      window.location.replace(`site.html?pedido=${encodeURIComponent(pedido)}`);
-      return;
-    }
-    if (order && checkout) {
-      const status = checkout === "cancelled" ? "cancelled" : checkout === "expired" ? "expired" : "success";
-      window.location.replace(`sucesso.html?status=${status}&order=${encodeURIComponent(order)}`);
-    }
-  })();
-  </script>
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 
 <body>
@@ -40,7 +20,7 @@
   <a class="brand" href="#inicio">Amor <span>em Site</span> ♥</a>
 
   <nav>
-    <a href="#teste">Teste grátis</a>
+    <a href="#planos">Teste grátis</a>
     <a href="#recursos">O que recebe</a>
     <a href="#planos">Planos</a>
   </nav>
@@ -66,7 +46,7 @@
     </p>
 
     <div class="actions">
-      <a class="btn" href="#teste">Criar meu teste ♥</a>
+      <a class="btn" href="#planos">Criar meu teste ♥</a>
       <a class="link" href="#como-funciona">Ver como funciona ↓</a>
     </div>
 
@@ -894,7 +874,109 @@
 
 </footer>
 
-<script src="script.js?v=8"></script>
+<script src="script.js?v=7"></script>
+<script id="free-preview-same-page-fix">
+/*
+ * PRÉVIA GRATUITA — permanece na página inicial.
+ *
+ * O script.js original redireciona para site.html?preview=1
+ * quando nenhum plano foi escolhido. Aqui interceptamos apenas
+ * esse clique e deixamos a prévia que já existe nesta página
+ * continuar sendo atualizada.
+ */
+(function () {
+  document.addEventListener("click", function (event) {
+    const target = event.target instanceof Element
+      ? event.target.closest("#generatePreviewButton")
+      : null;
+
+    if (!target) return;
+
+    // Impede o listener antigo do script.js de redirecionar.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    // Atualiza/anima a prévia que já está nesta mesma página.
+    if (typeof window.generatePreview === "function") {
+      window.generatePreview();
+    } else {
+      document.querySelectorAll(
+        "#loveName, #yourName, #loveMessage, #loveDate, #loveMusic, #loveStory, #reason1, #reason2, #reason3"
+      ).forEach(function (field) {
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    }
+
+    // Leva o usuário até a prévia, sem abrir outra página.
+    document.getElementById("lovePreview")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }, true);
+})();
+</script>
+
+<script>
+(function () {
+  const API_URL = "https://amor-em-site-backend.vercel.app";
+  const params = new URLSearchParams(window.location.search);
+  const pedido = params.get("pedido");
+  const order = params.get("order");
+
+  if (!pedido && !order) return;
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value != null && String(value).trim()) {
+      el.textContent = String(value);
+    }
+  };
+
+  async function loadPaidOrder() {
+    try {
+      const query = pedido
+        ? `?pedido=${encodeURIComponent(pedido)}`
+        : `?order=${encodeURIComponent(order)}`;
+
+      const response = await fetch(`${API_URL}/api/get-order${query}`, {
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        console.error("Não foi possível carregar o pedido.");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (!result.ok || !result.order) return;
+
+      const o = result.order;
+
+      setText("previewName", o.love_name || "meu amor");
+      setText("previewMessage", o.love_message);
+      setText("previewStory", o.love_story);
+      setText("previewReason1", o.reason_1);
+      setText("previewReason2", o.reason_2);
+      setText("previewReason3", o.reason_3);
+
+      // Se o pedido veio por ?order=AES-..., troca o endereço
+      // pelo slug definitivo depois que o backend retornar.
+      if (order && o.site_slug) {
+        const finalUrl =
+          `${window.location.origin}${window.location.pathname}?pedido=${encodeURIComponent(o.site_slug)}`;
+
+        window.history.replaceState({}, "", finalUrl);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar pedido:", error);
+    }
+  }
+
+  loadPaidOrder();
+})();
+</script>
+
 
 </body>
 </html>
