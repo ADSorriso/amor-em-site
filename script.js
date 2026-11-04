@@ -1347,6 +1347,7 @@ Seu jeito de me apoiar"></textarea>
 
         close();
         sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
+  sessionStorage.setItem("amorEmSiteSelectedMusic", previewData.loveMusic || "");
   window.location.href = "site.html?preview=1";
       };
 
@@ -1610,6 +1611,7 @@ async function openPreviewForPlan(planKey) {
   }
 
   sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
+  sessionStorage.setItem("amorEmSiteSelectedMusic", previewData.loveMusic || "");
   window.location.href = "site.html?preview=1";
 }
 
