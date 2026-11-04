@@ -1347,7 +1347,7 @@ Seu jeito de me apoiar"></textarea>
 
         close();
         sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
-        window.location.href = "site.html?preview=1";
+  window.location.href = "site.html?preview=1";
       };
 
       img.onerror = () => {
@@ -1609,7 +1609,6 @@ async function openPreviewForPlan(planKey) {
     return;
   }
 
-  sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
   window.location.href = "site.html?preview=1";
 }
 

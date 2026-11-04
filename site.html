@@ -1354,6 +1354,7 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
 <div class="preview-toast" id="toast">Feito com amor ❤️</div>
 <button class="music-button" id="musicButton" title="Música">♫</button>
 <audio id="music" loop preload="auto"></audio>
+<button id="musicStartFallback" type="button" aria-label="Tocar música escolhida" style="display:none;position:fixed;bottom:80px;right:18px;z-index:10000;padding:13px 18px;border:1px solid #ff7188;border-radius:999px;background:#a40032;color:#fff;font-weight:800;box-shadow:0 10px 35px #0009;cursor:pointer">▶ Tocar nossa música</button>
 
 <script>
 (function(){
@@ -1427,53 +1428,50 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   $("envelope").onclick=()=>{if(!romantic)return;$("envelope").classList.toggle("opened");$("letterPaper").classList.toggle("open")};
   $("surpriseButton").onclick=()=>{if(!romantic)return;$("surpriseBefore").style.display="none";$("surpriseAfter").classList.remove("hidden");burst(28)};
 
-  // Áudio da prévia: respeita a escolha, tenta autoplay e oferece ação visível
-  // quando o navegador exige um toque/clique para permitir som.
   const audio=$("music");
-  const musicAliases={
-    "nossa-musica":"love-me-like-you-do.mp3",
-    "piano-romantico":"the-reason.mp3",
-    "romantica":"love-me-like-you-do.mp3",
-    "amor-acustico":"far-away.mp3",
-    "noite-de-amor":"a-thousand-years.mp3",
-    "especial-premium":"a-thousand-years.mp3"
-  };
-  const musicFile=musicFiles[current.loveMusic]||musicAliases[current.loveMusic]||"";
-  if(musicFile){audio.src=musicFile;audio.load();}
-
-  const musicPrompt=document.createElement("button");
-  musicPrompt.type="button";
-  musicPrompt.textContent="▶ Tocar nossa música";
-  musicPrompt.setAttribute("aria-label","Iniciar a música selecionada");
-  musicPrompt.style.cssText="position:fixed;bottom:76px;right:18px;z-index:10000;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:13px 18px;background:linear-gradient(135deg,#ff3158,#a40032);color:white;font:700 13px 'DM Sans',sans-serif;box-shadow:0 10px 35px #0009;cursor:pointer;display:none";
-  document.body.appendChild(musicPrompt);
-  const showMusicPrompt=()=>{if(musicFile && audio.paused)musicPrompt.style.display="block";};
-  const hideMusicPrompt=()=>{musicPrompt.style.display="none";};
+  const fallbackButton=$("musicStartFallback");
+  const musicFile=musicFiles[current.loveMusic]||"";
+  if(musicFile){
+    audio.src=new URL(musicFile,document.baseURI).href;
+    audio.load();
+  }
+  function updateMusicControls(){
+    $("musicButton").textContent=audio.paused?"♫":"❚❚";
+    fallbackButton.style.display=audio.paused&&!!musicFile?"block":"none";
+  }
   async function playMusic(){
-    if(!musicFile){return false;}
+    if(!musicFile){fallbackButton.style.display="none";return false;}
     try{
       await audio.play();
-      $("musicButton").textContent="❚❚";
-      hideMusicPrompt();
+      updateMusicControls();
       return true;
-    }catch(e){
-      $("musicButton").textContent="♫";
-      showMusicPrompt();
-      console.warn("Reprodução automática não permitida ou áudio indisponível:",e);
+    }catch(error){
+      console.warn("Reprodução automática não permitida ou arquivo indisponível:",error);
+      updateMusicControls();
       return false;
     }
   }
-  musicPrompt.addEventListener("click",playMusic);
-  audio.addEventListener("play",()=>{$("musicButton").textContent="❚❚";hideMusicPrompt();});
-  audio.addEventListener("pause",()=>{$("musicButton").textContent="♫";});
-  audio.addEventListener("error",()=>{showMusicPrompt();console.warn("Não foi possível carregar o MP3 selecionado:",audio.currentSrc);});
-
+  audio.addEventListener("play",updateMusicControls);
+  audio.addEventListener("pause",updateMusicControls);
+  audio.addEventListener("error",()=>{
+    fallbackButton.textContent="♫ Não foi possível carregar a música";
+    fallbackButton.style.display="block";
+    console.error("Falha ao carregar o MP3:",audio.currentSrc);
+  });
   const shouldAutoplayMusic=!!data||!!paid||sessionStorage.getItem("amorEmSiteAutoplayMusic")==="1";
   sessionStorage.removeItem("amorEmSiteAutoplayMusic");
-  if(shouldAutoplayMusic && musicFile){setTimeout(()=>{playMusic();},120);}
-
+  if(shouldAutoplayMusic&&musicFile){
+    // A ativação do clique pode não sobreviver à navegação entre páginas.
+    // Tentamos reproduzir; se bloqueado, mostramos um botão explícito.
+    playMusic();
+  }
+  fallbackButton.addEventListener("click",playMusic);
   $("openMusic").onclick=async()=>{await playMusic();$("inicio").scrollIntoView({behavior:"smooth"})};
-  $("musicButton").onclick=async()=>{if(!musicFile)return;if(audio.paused)await playMusic();else{audio.pause();$("musicButton").textContent="♫"}};
+  $("musicButton").onclick=async()=>{
+    if(!musicFile)return;
+    if(audio.paused)await playMusic();
+    else{audio.pause();updateMusicControls();}
+  };
 
   document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.onclick=()=>$("checkout").scrollIntoView({behavior:"smooth"}));
   $("lovePill").onclick=()=>{const t=$("toast");t.textContent="Feito com amor ❤️";t.classList.add("show");burst(10);setTimeout(()=>t.classList.remove("show"),1800)};
