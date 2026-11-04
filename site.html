@@ -1055,6 +1055,45 @@ body.preview-mode:not(.premium-mode) #photoGridSection .photo-card:has(img[src]:
 }
 </style>
 
+<style id="hero-photo-complete-fix">
+
+/* Foto principal completa — prévia e site entregue */
+.hero-photo,
+body.preview-mode:not(.premium-mode) .hero-photo {
+  width: min(580px, 92vw) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  margin: 30px auto 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 26px !important;
+  background: #16090d;
+  border: 1px solid rgba(255, 113, 136, .28);
+  box-shadow: 0 22px 65px rgba(0,0,0,.48), 0 0 35px rgba(255,49,88,.08);
+}
+.hero-photo img,
+body.preview-mode:not(.premium-mode) .hero-photo img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  border-radius: inherit !important;
+  transform: none !important;
+}
+@media(max-width:600px) {
+  .hero-photo,
+  body.preview-mode:not(.premium-mode) .hero-photo {
+    width: min(100%, 92vw) !important;
+    border-radius: 22px !important;
+  }
+}
+</style>
 </head>
 <body class="preview-mode">
 <div id="hearts" aria-hidden="true"></div>
