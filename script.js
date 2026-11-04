@@ -1609,6 +1609,7 @@ async function openPreviewForPlan(planKey) {
     return;
   }
 
+  sessionStorage.setItem("amorEmSiteAutoplayMusic", "1");
   window.location.href = "site.html?preview=1";
 }
 
