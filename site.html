@@ -1427,29 +1427,53 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   $("envelope").onclick=()=>{if(!romantic)return;$("envelope").classList.toggle("opened");$("letterPaper").classList.toggle("open")};
   $("surpriseButton").onclick=()=>{if(!romantic)return;$("surpriseBefore").style.display="none";$("surpriseAfter").classList.remove("hidden");burst(28)};
 
-  const audio=$("music");const musicFile=musicFiles[current.loveMusic]||"";if(musicFile){audio.src=musicFile;audio.load()}
+  // Áudio da prévia: respeita a escolha, tenta autoplay e oferece ação visível
+  // quando o navegador exige um toque/clique para permitir som.
+  const audio=$("music");
+  const musicAliases={
+    "nossa-musica":"love-me-like-you-do.mp3",
+    "piano-romantico":"the-reason.mp3",
+    "romantica":"love-me-like-you-do.mp3",
+    "amor-acustico":"far-away.mp3",
+    "noite-de-amor":"a-thousand-years.mp3",
+    "especial-premium":"a-thousand-years.mp3"
+  };
+  const musicFile=musicFiles[current.loveMusic]||musicAliases[current.loveMusic]||"";
+  if(musicFile){audio.src=musicFile;audio.load();}
+
+  const musicPrompt=document.createElement("button");
+  musicPrompt.type="button";
+  musicPrompt.textContent="▶ Tocar nossa música";
+  musicPrompt.setAttribute("aria-label","Iniciar a música selecionada");
+  musicPrompt.style.cssText="position:fixed;bottom:76px;right:18px;z-index:10000;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:13px 18px;background:linear-gradient(135deg,#ff3158,#a40032);color:white;font:700 13px 'DM Sans',sans-serif;box-shadow:0 10px 35px #0009;cursor:pointer;display:none";
+  document.body.appendChild(musicPrompt);
+  const showMusicPrompt=()=>{if(musicFile && audio.paused)musicPrompt.style.display="block";};
+  const hideMusicPrompt=()=>{musicPrompt.style.display="none";};
   async function playMusic(){
-    if(!audio.src)return false;
+    if(!musicFile){return false;}
     try{
       await audio.play();
       $("musicButton").textContent="❚❚";
+      hideMusicPrompt();
       return true;
     }catch(e){
       $("musicButton").textContent="♫";
+      showMusicPrompt();
+      console.warn("Reprodução automática não permitida ou áudio indisponível:",e);
       return false;
     }
   }
+  musicPrompt.addEventListener("click",playMusic);
+  audio.addEventListener("play",()=>{$("musicButton").textContent="❚❚";hideMusicPrompt();});
+  audio.addEventListener("pause",()=>{$("musicButton").textContent="♫";});
+  audio.addEventListener("error",()=>{showMusicPrompt();console.warn("Não foi possível carregar o MP3 selecionado:",audio.currentSrc);});
 
-  // Tenta iniciar a música automaticamente na prévia e no site já pago.
-  // Se o navegador bloquear autoplay, o botão ♫ continua disponível.
-  const shouldAutoplayMusic = !!data || !!paid || sessionStorage.getItem("amorEmSiteAutoplayMusic")==="1";
-  if(shouldAutoplayMusic){
-    sessionStorage.removeItem("amorEmSiteAutoplayMusic");
-    setTimeout(()=>playMusic(),120);
-  }
+  const shouldAutoplayMusic=!!data||!!paid||sessionStorage.getItem("amorEmSiteAutoplayMusic")==="1";
+  sessionStorage.removeItem("amorEmSiteAutoplayMusic");
+  if(shouldAutoplayMusic && musicFile){setTimeout(()=>{playMusic();},120);}
 
   $("openMusic").onclick=async()=>{await playMusic();$("inicio").scrollIntoView({behavior:"smooth"})};
-  $("musicButton").onclick=async()=>{if(!audio.src)return;if(audio.paused)await playMusic();else{audio.pause();$("musicButton").textContent="♫"}};
+  $("musicButton").onclick=async()=>{if(!musicFile)return;if(audio.paused)await playMusic();else{audio.pause();$("musicButton").textContent="♫"}};
 
   document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.onclick=()=>$("checkout").scrollIntoView({behavior:"smooth"}));
   $("lovePill").onclick=()=>{const t=$("toast");t.textContent="Feito com amor ❤️";t.classList.add("show");burst(10);setTimeout(()=>t.classList.remove("show"),1800)};
