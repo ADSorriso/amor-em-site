@@ -339,7 +339,7 @@
         id="generatePreviewButton"
         type="button"
       >
-        ❤️ Criar meu site
+        ✨ Abrir minha prévia
       </button>
 
       <p class="form-note">
@@ -874,47 +874,8 @@
 
 </footer>
 
-<script src="script.js?v=7"></script>
-<script id="free-preview-same-page-fix">
-/*
- * PRÉVIA GRATUITA — permanece na página inicial.
- *
- * O script.js original redireciona para site.html?preview=1
- * quando nenhum plano foi escolhido. Aqui interceptamos apenas
- * esse clique e deixamos a prévia que já existe nesta página
- * continuar sendo atualizada.
- */
-(function () {
-  document.addEventListener("click", function (event) {
-    const target = event.target instanceof Element
-      ? event.target.closest("#generatePreviewButton")
-      : null;
+<script src="script.js?v=20261105-1"></script>
 
-    if (!target) return;
-
-    // Impede o listener antigo do script.js de redirecionar.
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    // Atualiza/anima a prévia que já está nesta mesma página.
-    if (typeof window.generatePreview === "function") {
-      window.generatePreview();
-    } else {
-      document.querySelectorAll(
-        "#loveName, #yourName, #loveMessage, #loveDate, #loveMusic, #loveStory, #reason1, #reason2, #reason3"
-      ).forEach(function (field) {
-        field.dispatchEvent(new Event("input", { bubbles: true }));
-      });
-    }
-
-    // Leva o usuário até a prévia, sem abrir outra página.
-    document.getElementById("lovePreview")?.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-  }, true);
-})();
-</script>
 
 <script>
 (function () {
