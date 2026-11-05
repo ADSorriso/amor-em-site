@@ -468,6 +468,15 @@ section[id],.checkout-final{scroll-margin-top:88px !important}
 </style>
 
 
+<style id="delivered-premium-intro-cleanup">
+/* A tela de boas-vindas já inicia a experiência; esconder CTA duplicado
+   somente no site entregue, mantendo a prévia comercial intacta. */
+body.delivered-site .premium-preview #premiumOpenMusic,
+body.delivered-site .premium-preview .px-copy > .px-mini {
+  display: none !important;
+}
+</style>
+
 <style id="premium-exclusive-css">
 .premium-preview{display:none}
 body.premium-mode .premium-preview{display:block}
