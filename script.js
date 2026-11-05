@@ -976,8 +976,25 @@ function ensurePlanPersonalizationModal() {
     .pem-primary { background:#e51d4f; color:#fff; }
     .pem-primary:disabled { opacity:.65; cursor:wait; }
     @media (max-width: 650px) {
-      #planPersonalizationModal { padding:12px; }
-      .pem-card { padding:22px; max-height:calc(100vh - 24px); border-radius:20px; }
+      /* No celular, o modal rola desde o topo sem cortar o botão de fechar. */
+      #planPersonalizationModal {
+        align-items: flex-start;
+        justify-content: center;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 12px max(16px, env(safe-area-inset-bottom, 0px));
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .pem-card {
+        flex: 0 0 auto;
+        width: 100%;
+        margin: auto 0;
+        padding: 22px;
+        max-height: none;
+        overflow: visible;
+        border-radius: 20px;
+      }
       .pem-grid { grid-template-columns:1fr; }
       .pem-field.full, .pem-section, .pem-premium { grid-column:auto; }
       .pem-title { font-size:25px; }
