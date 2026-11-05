@@ -1365,7 +1365,7 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   const prices={essencial:"R$ 10,90",romantico:"R$ 39,90",premium:"R$ 59,90"};
   const names={essencial:"Essencial",romantico:"Romântico",premium:"Premium"};
   const musicFiles={"Love Me Like You Do":"love-me-like-you-do.mp3","The Reason":"the-reason.mp3","Far Away":"far-away.mp3","A Thousand Years":"a-thousand-years.mp3"};
-  let current={...(data||{})};
+  let current={...(paid ? {} : (data||{}))};
   const rawPlan=current.planKey||current.plan||"romantico";
   let plan=/premium/i.test(String(rawPlan))?"premium":(/essencial/i.test(String(rawPlan))?"essencial":"romantico");
   document.body.classList.toggle("premium-mode",plan==="premium");
@@ -1385,8 +1385,8 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   const esc=v=>String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
   const defaultReasons=["Seu sorriso ilumina meus dias.", "Você me faz sorrir sem perceber.", "Seu jeito único de ser.", "Você me apoia em tudo.", "Você acredita em mim.", "Você torna meus dias mais leves.", "Seu abraço é meu lugar favorito.", "Seu carinho me faz bem.", "Você me entende de um jeito especial.", "Você sabe quando eu preciso de você.", "Seu olhar me encanta.", "Sua voz acalma meu coração.", "Você me faz querer ser melhor.", "Você celebra minhas conquistas.", "Você fica ao meu lado nos momentos difíceis.", "Você transforma momentos simples em lembranças.", "Seu jeito de cuidar de mim.", "Você me faz sentir amado.", "Você respeita quem eu sou.", "Você conhece minhas manias.", "Você ri das minhas besteiras.", "Você torna qualquer lugar especial.", "Você é minha companhia favorita.", "Você me inspira todos os dias.", "Você tem um coração enorme.", "Você se preocupa comigo.", "Você sabe me acalmar.", "Você me dá paz.", "Você me traz felicidade.", "Você faz meu coração acelerar.", "Seu beijo é inesquecível.", "Seu abraço sempre chega na hora certa.", "Você deixa tudo mais bonito.", "Você é especial para mim.", "Você faz parte dos meus melhores momentos.", "Você me dá motivos para agradecer.", "Você torna meus sonhos mais bonitos.", "Você me ensina coisas novas.", "Você me faz enxergar o lado bom.", "Você tem um jeito lindo de amar.", "Você me conhece de verdade.", "Você aceita minhas imperfeições.", "Você não desiste de nós.", "Você acredita no nosso futuro.", "Você faz planos comigo.", "Você me inclui nos seus sonhos.", "Você me faz sentir em casa.", "Você é meu porto seguro.", "Você deixa meus dias mais coloridos.", "Você me dá coragem.", "Você me faz acreditar no amor.", "Você me surpreende nos pequenos detalhes.", "Você lembra das coisas que importam para mim.", "Você sabe arrancar meu sorriso.", "Você torna qualquer conversa especial.", "Você é minha pessoa favorita.", "Você faz o tempo passar rápido.", "Você faz cada momento valer a pena.", "Você me faz querer viver tudo ao seu lado.", "Você é minha melhor escolha.", "Você faz meu coração ficar tranquilo.", "Você me dá segurança.", "Você me trata com carinho.", "Você me olha de um jeito diferente.", "Você me faz sentir importante.", "Você comemora nossas pequenas vitórias.", "Você transforma saudade em vontade de estar perto.", "Você me faz sonhar acordado.", "Você deixa minha vida mais bonita.", "Você é parte da minha felicidade.", "Você me faz querer guardar cada lembrança.", "Você torna nossos momentos inesquecíveis.", "Você me conhece até no silêncio.", "Você entende meus olhares.", "Você sabe quando preciso de um abraço.", "Você me faz rir até nos dias ruins.", "Você nunca deixa faltar carinho.", "Você me lembra que não estou sozinho.", "Você me faz acreditar que vale a pena.", "Você torna o futuro mais bonito.", "Você me dá esperança.", "Você me faz sentir sorte.", "Você é uma das melhores partes da minha vida.", "Você faz meu coração escolher você todos os dias.", "Você me faz querer construir uma vida ao seu lado.", "Você transforma rotina em aventura.", "Você torna nossas conversas especiais.", "Você me faz amar ainda mais cada detalhe.", "Você é linda por dentro e por fora.", "Você tem uma presença que me acalma.", "Você me faz sentir completo.", "Você me ensina o significado de parceria.", "Você está nos meus melhores pensamentos.", "Você é meu sorriso favorito.", "Você faz qualquer dia comum virar especial.", "Você é minha lembrança favorita.", "Você faz meu coração bater mais forte.", "Você é meu motivo para acreditar.", "Você é simplesmente você — e isso já é tudo."];
   const customReasons=(current.reasons100||"").split(/\\n|\n/).map(x=>x.trim()).filter(x=>x && !/^[eE]$/.test(x)).slice(0,100);
-  const lines=Array.from({length:100},(_,i)=>customReasons[i]||defaultReasons[i]);
-  const romantic=plan!=="essencial";
+  let lines=Array.from({length:100},(_,i)=>customReasons[i]||defaultReasons[i]);
+  let romantic=plan!=="essencial";
 
   set("loveName",current.loveName||"meu amor");
   set("heartName",current.loveName||"Vocês");
@@ -1438,7 +1438,7 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
     "noite-de-amor":"a-thousand-years.mp3",
     "especial-premium":"a-thousand-years.mp3"
   };
-  const musicFile=musicFiles[current.loveMusic]||musicAliases[current.loveMusic]||"";
+  let musicFile=musicFiles[current.loveMusic]||musicAliases[current.loveMusic]||"";
   if(musicFile){audio.src=musicFile;audio.load();}
 
   // A música começa somente após o clique do visitante em "Entrar no nosso mundo".
@@ -1494,7 +1494,68 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
 
   // Se veio de um pedido pago, carrega os dados reais e transforma a página em site final.
   if(paid){
-    (async()=>{try{const q=params.get("pedido")?`?pedido=${encodeURIComponent(params.get("pedido"))}`:`?order=${encodeURIComponent(params.get("order"))}`;const r=await fetch(`${API_URL}/api/get-order${q}`,{cache:"no-store"});const j=await r.json();if(j.ok&&j.order){const o=j.order;set("loveName",o.love_name||"meu amor");set("loveMessage",o.love_message||"");set("loveStory",o.love_story||"");set("reasonText",o.reason_1||"");}}catch(e){console.error(e)}})();
+    // A entrega usa exclusivamente o pedido persistido; nunca os dados locais da prévia.
+    document.body.classList.add("delivered-site");
+    (async()=>{
+      try{
+        const q=params.get("pedido")?`?pedido=${encodeURIComponent(params.get("pedido"))}`:`?order=${encodeURIComponent(params.get("order"))}`;
+        const r=await fetch(`${API_URL}/api/get-order${q}`,{cache:"no-store"});
+        if(!r.ok)throw new Error(`Pedido indisponível (${r.status})`);
+        const j=await r.json();
+        if(!j.ok||!j.order)throw new Error("Pedido não encontrado ou não liberado.");
+        const o=j.order;
+        const saved=(o.site_data && typeof o.site_data==="object")?o.site_data:{};
+        const field=(key,column)=>saved[key]??o[column]??"";
+        const paidPlan=String(o.plan||saved.plan||"romantico").toLowerCase();
+        plan=/premium/.test(paidPlan)?"premium":(/essencial/.test(paidPlan)?"essencial":"romantico");
+        romantic=plan!=="essencial";
+        document.body.classList.toggle("premium-mode",plan==="premium");
+        lockIds.forEach(id=>$(id)?.classList.toggle("is-locked",!romantic));
+        if(plan==="premium"){
+          const premiumNav={"Início":"#premium-inicio","Nossa História":"#premium-historia","Momentos":"#premium-momentos","Motivos":"#premium-motivos","Carta":"#premium-carta","Surpresa":"#premium-surpresa"};
+          document.querySelectorAll(".navbar nav a").forEach(a=>{const label=a.textContent.trim();if(premiumNav[label])a.href=premiumNav[label]});
+          document.querySelector(".navbar .logo")?.setAttribute("href","#premium-inicio");
+        }
+        const name=field("loveName","love_name")||"meu amor";
+        const sender=field("yourName","your_name");
+        const message=field("loveMessage","love_message");
+        const story=field("loveStory","love_story");
+        const surprise=field("loveSurprise","love_surprise");
+        const savedLetter=field("loveLetter","love_letter");
+        const date=field("loveDate","love_date");
+        set("loveName",name);set("heartName",name);set("premiumName",name);
+        set("loveMessage",message);set("premiumMessage",message);
+        set("loveStory",story);set("premiumStory",story);
+        set("surpriseText",surprise);set("premiumSurpriseText",surprise);
+        if(savedLetter){$("letterText").textContent=savedLetter;$("premiumLetter").textContent=savedLetter;}
+        if(sender){set("letterSignature",`Com todo meu amor,\n${sender} ♥`);set("premiumSignature",`Com todo meu amor,\n${sender} ♥`);}
+        if(date){
+          const d=new Date(String(date).slice(0,10)+"T00:00:00");
+          if(!Number.isNaN(d.getTime())){
+            const formatted=d.toLocaleDateString("pt-BR");
+            set("loveDate",formatted);set("premiumDate",formatted);
+            set("premiumDays","+"+Math.max(1,Math.floor((Date.now()-d.getTime())/86400000)+1));
+          }
+        }
+        const image=saved.photoData||o.photo_url||"";
+        if(typeof image==="string" && (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(image)||/^https:\/\//i.test(image))){
+          const hero=$("heroPhoto");hero.classList.remove("empty");hero.replaceChildren();
+          const img=document.createElement("img");img.src=image;img.alt="Foto de vocês";hero.appendChild(img);
+          for(let i=1;i<=8;i++)if($("heartPhoto"+i))$("heartPhoto"+i).src=image;
+          for(let i=1;i<=3;i++)if($("gridPhoto"+i))$("gridPhoto"+i).src=image;
+          ["premiumPhoto1","premiumPhoto2","premiumPhoto3","premiumPhoto4","premiumStory1","premiumStory2","premiumStory3","premiumMemory1","premiumMemory2","premiumMemory3","premiumMemory4","premiumMemory5"].forEach(id=>{if($(id))$(id).src=image});
+        }
+        const music=field("loveMusic","love_music");
+        if(music){set("musicName",music);musicFile=musicFiles[music]||musicAliases[music]||"";if(musicFile){audio.src=musicFile;audio.load();}}
+        const custom=String(saved.reasons100||"").split(/\\n|\n/).map(x=>x.trim()).filter(Boolean);
+        lines=Array.from({length:100},(_,i)=>custom[i]||[saved[`reason${i+1}`],o[`reason_${i+1}`],defaultReasons[i]].find(Boolean)||defaultReasons[i]);
+        reasonIndex=0;premiumReasonIndex=0;
+        set("reasonText",lines[0]);set("reasonCounter","Motivo 1 de 100");showPremiumReason();
+      }catch(error){
+        console.error("Falha ao carregar site entregue:",error);
+        set("loveMessage","Não foi possível carregar os dados deste pedido. Tente atualizar a página.");
+      }
+    })();
   }
 
   // Premium: conteúdo e interações do modelo exclusivo.
@@ -1574,5 +1635,12 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
 }
 </style>
 
+<style id="delivered-site-css">
+body.delivered-site .demo-note,
+body.delivered-site .checkout-final,
+body.delivered-site .px-checkout,
+body.delivered-site .px-features,
+body.delivered-site [data-upgrade]{display:none !important}
+</style>
 </body>
 </html>
