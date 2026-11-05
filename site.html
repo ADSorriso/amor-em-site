@@ -1094,6 +1094,36 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   }
 }
 </style>
+
+<style id="mobile-gallery-fix-20261105">
+/* Uma única foto deve aparecer apenas no destaque principal. */
+body.single-photo:not(.premium-mode) #momentos,
+body.single-photo:not(.premium-mode) #momentos-grid{display:none !important}
+/* Premium: mantém a apresentação, história e conteúdo, sem colagens artificiais. */
+body.single-photo.premium-mode .px-collage,
+body.single-photo.premium-mode .px-story-wall .px-photo,
+body.single-photo.premium-mode .px-memory-wall .px-photo{display:none !important}
+body.single-photo.premium-mode .px-story-wall,
+body.single-photo.premium-mode .px-memory-wall{min-height:0 !important}
+/* Evita títulos escondidos pelo cabeçalho fixo. */
+html{scroll-padding-top:110px}
+section[id]{scroll-margin-top:110px !important}
+@media(max-width:700px){
+  .navbar{min-height:68px !important;padding-left:4% !important;padding-right:4% !important}
+  .navbar .logo{font-size:clamp(20px,5vw,28px) !important}
+  .navbar .love-pill{font-size:12px !important;white-space:nowrap}
+  .standard-preview section:not(.hero):not(#momentos):not(#momentos-grid){padding-top:78px !important;padding-bottom:78px !important}
+  .section-heading h2,.px-heading h2{font-size:clamp(32px,9vw,52px) !important;line-height:1.13 !important;overflow-wrap:anywhere}
+  .section-heading p,.px-heading p{font-size:clamp(13px,3.8vw,16px) !important;line-height:1.65 !important}
+  .hero{padding-top:118px !important}
+  .hero h1{font-size:clamp(43px,11vw,65px) !important;overflow-wrap:anywhere}
+  .music-button{right:16px !important;bottom:22px !important;width:48px !important;height:48px !important}
+  #backToTop{bottom:84px !important}
+  .preview-photo-grid{grid-template-columns:1fr !important}
+  .preview-photo-grid .photo-card{height:auto !important;min-height:0 !important}
+  .preview-photo-grid img{width:100% !important;height:auto !important;object-fit:contain !important}
+}
+</style>
 </head>
 <body class="preview-mode">
 <div id="hearts" aria-hidden="true"></div>
@@ -1409,8 +1439,8 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   const photo=current.photoData||"";
   if(photo){
     $("heroPhoto").classList.remove("empty");$("heroPhoto").innerHTML=`<img src="${photo}" alt="Foto de vocês">`;
-    for(let i=1;i<=8;i++)$("heartPhoto"+i).src=photo;
-    for(let i=1;i<=3;i++)$("gridPhoto"+i).src=photo;
+    // Apenas uma foto foi enviada: não duplicar em galerias.
+    document.body.classList.add("single-photo");
   }
 
   // Essencial mantém a experiência inicial e deixa os recursos avançados visivelmente bloqueados.
@@ -1541,9 +1571,8 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
         if(typeof image==="string" && (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(image)||/^https:\/\//i.test(image))){
           const hero=$("heroPhoto");hero.classList.remove("empty");hero.replaceChildren();
           const img=document.createElement("img");img.src=image;img.alt="Foto de vocês";hero.appendChild(img);
-          for(let i=1;i<=8;i++)if($("heartPhoto"+i))$("heartPhoto"+i).src=image;
-          for(let i=1;i<=3;i++)if($("gridPhoto"+i))$("gridPhoto"+i).src=image;
-          ["premiumPhoto1","premiumPhoto2","premiumPhoto3","premiumPhoto4","premiumStory1","premiumStory2","premiumStory3","premiumMemory1","premiumMemory2","premiumMemory3","premiumMemory4","premiumMemory5"].forEach(id=>{if($(id))$(id).src=image});
+          // O pedido possui uma foto principal; não a replicar em todas as galerias.
+          document.body.classList.add("single-photo");
         }
         const music=field("loveMusic","love_music");
         if(music){set("musicName",music);musicFile=musicFiles[music]||musicAliases[music]||"";if(musicFile){audio.src=musicFile;audio.load();}}
