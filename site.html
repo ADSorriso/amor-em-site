@@ -1094,34 +1094,32 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
   }
 }
 </style>
-
-<style id="mobile-gallery-fix-20261105">
-/* Uma única foto deve aparecer apenas no destaque principal. */
-body.single-photo:not(.premium-mode) #momentos,
-body.single-photo:not(.premium-mode) #momentos-grid{display:none !important}
-/* Premium: mantém a apresentação, história e conteúdo, sem colagens artificiais. */
-body.single-photo.premium-mode .px-collage,
-body.single-photo.premium-mode .px-story-wall .px-photo,
-body.single-photo.premium-mode .px-memory-wall .px-photo{display:none !important}
-body.single-photo.premium-mode .px-story-wall,
-body.single-photo.premium-mode .px-memory-wall{min-height:0 !important}
-/* Evita títulos escondidos pelo cabeçalho fixo. */
-html{scroll-padding-top:110px}
-section[id]{scroll-margin-top:110px !important}
+<style id="delivered-layout-fix-20261105">
+/* Correções restritas ao site entregue: prévia e checkout preservados. */
+body.delivered-loading main {visibility:hidden}
+body.delivered-site .demo-note,body.delivered-site .checkout-final,body.delivered-site .px-checkout {display:none!important}
+body.delivered-site .hero{display:flex!important;align-items:center;justify-content:center;min-height:100svh; padding:110px 20px 75px!important}
+body.delivered-site .hero-content{width:100%;max-width:760px;margin:0 auto;min-width:0}
+body.delivered-site .hero-photo{display:block!important;width:min(580px,92vw)!important;max-width:100%;height:auto!important;aspect-ratio:auto!important;margin:30px auto 0!important}
+body.delivered-site .hero-photo img{display:block!important;width:100%!important;height:auto!important;object-fit:contain!important;max-height:none!important}
+body.delivered-site #storySection{min-height:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+body.delivered-site #historia .preview-story-demo{display:grid!important}
+body.delivered-site .preview-lock:not(.is-locked) .locked-overlay{display:none!important}
+body.delivered-site [hidden]{display:none!important}
+body.delivered-site.delivered-single-photo #momentos,body.delivered-site.delivered-single-photo #momentos-grid{display:none!important}
+body.delivered-site.delivered-single-photo .px-photo[hidden]{display:none!important}
+body.delivered-site.delivered-single-photo .px-collage{min-height:0!important;display:flex!important;align-items:center;justify-content:center}
+body.delivered-site.delivered-single-photo .px-collage .px-photo:not([hidden]){position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;max-width:min(100%,460px)!important}
+body.delivered-site.delivered-single-photo .px-story-wall,body.delivered-site.delivered-single-photo .px-memory-wall{min-height:0!important;display:block!important}
+body.delivered-site.delivered-single-photo .px-story-card{position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:min(700px,100%)!important;margin:auto}
 @media(max-width:700px){
-  .navbar{min-height:68px !important;padding-left:4% !important;padding-right:4% !important}
-  .navbar .logo{font-size:clamp(20px,5vw,28px) !important}
-  .navbar .love-pill{font-size:12px !important;white-space:nowrap}
-  .standard-preview section:not(.hero):not(#momentos):not(#momentos-grid){padding-top:78px !important;padding-bottom:78px !important}
-  .section-heading h2,.px-heading h2{font-size:clamp(32px,9vw,52px) !important;line-height:1.13 !important;overflow-wrap:anywhere}
-  .section-heading p,.px-heading p{font-size:clamp(13px,3.8vw,16px) !important;line-height:1.65 !important}
-  .hero{padding-top:118px !important}
-  .hero h1{font-size:clamp(43px,11vw,65px) !important;overflow-wrap:anywhere}
-  .music-button{right:16px !important;bottom:22px !important;width:48px !important;height:48px !important}
-  #backToTop{bottom:84px !important}
-  .preview-photo-grid{grid-template-columns:1fr !important}
-  .preview-photo-grid .photo-card{height:auto !important;min-height:0 !important}
-  .preview-photo-grid img{width:100% !important;height:auto !important;object-fit:contain !important}
+ body.delivered-site .hero{padding:95px 16px 60px!important}
+ body.delivered-site .hero h1{font-size:clamp(38px,10vw,60px)!important;letter-spacing:-1px!important;line-height:1.12!important;overflow-wrap:anywhere}
+ body.delivered-site .section,body.delivered-site #historia,body.delivered-site #motivos,body.delivered-site #carta{padding:70px 16px!important}
+ body.delivered-site .hero-photo{width:min(100%,440px)!important}
+ body.delivered-site .px-hero{padding:90px 16px 45px!important}
+ body.delivered-site .px-collage .px-photo img{width:100%!important;height:auto!important;max-height:none!important}
+ body.delivered-site .px-story-wall,body.delivered-site .px-memory-wall{width:100%!important}
 }
 </style>
 </head>
@@ -1439,8 +1437,8 @@ section[id]{scroll-margin-top:110px !important}
   const photo=current.photoData||"";
   if(photo){
     $("heroPhoto").classList.remove("empty");$("heroPhoto").innerHTML=`<img src="${photo}" alt="Foto de vocês">`;
-    // Apenas uma foto foi enviada: não duplicar em galerias.
-    document.body.classList.add("single-photo");
+    for(let i=1;i<=8;i++)$("heartPhoto"+i).src=photo;
+    for(let i=1;i<=3;i++)$("gridPhoto"+i).src=photo;
   }
 
   // Essencial mantém a experiência inicial e deixa os recursos avançados visivelmente bloqueados.
@@ -1524,6 +1522,7 @@ section[id]{scroll-margin-top:110px !important}
 
   // Se veio de um pedido pago, carrega os dados reais e transforma a página em site final.
   if(paid){
+    document.body.classList.add("delivered-loading");
     // A entrega usa exclusivamente o pedido persistido; nunca os dados locais da prévia.
     document.body.classList.add("delivered-site");
     (async()=>{
@@ -1571,8 +1570,14 @@ section[id]{scroll-margin-top:110px !important}
         if(typeof image==="string" && (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(image)||/^https:\/\//i.test(image))){
           const hero=$("heroPhoto");hero.classList.remove("empty");hero.replaceChildren();
           const img=document.createElement("img");img.src=image;img.alt="Foto de vocês";hero.appendChild(img);
-          // O pedido possui uma foto principal; não a replicar em todas as galerias.
-          document.body.classList.add("single-photo");
+          // Uma foto enviada não deve virar onze cópias em galerias diferentes.
+          // Mantemos a imagem principal e ocultamos galerias sem fotos próprias.
+          document.body.classList.add("delivered-single-photo");
+          document.querySelectorAll("#momentos, #momentos-grid").forEach(el=>el.hidden=true);
+          // No Premium, mantém a foto na apresentação e oculta as cópias.
+          const premiumHero=$("premiumPhoto1");
+          if(premiumHero) premiumHero.src=image;
+          ["premiumPhoto2","premiumPhoto3","premiumPhoto4","premiumStory1","premiumStory2","premiumStory3","premiumMemory1","premiumMemory2","premiumMemory3","premiumMemory4","premiumMemory5"].forEach(id=>{const el=$(id);if(el)el.closest("figure")?.setAttribute("hidden","");});
         }
         const music=field("loveMusic","love_music");
         if(music){set("musicName",music);musicFile=musicFiles[music]||musicAliases[music]||"";if(musicFile){audio.src=musicFile;audio.load();}}
@@ -1580,8 +1585,10 @@ section[id]{scroll-margin-top:110px !important}
         lines=Array.from({length:100},(_,i)=>custom[i]||[saved[`reason${i+1}`],o[`reason_${i+1}`],defaultReasons[i]].find(Boolean)||defaultReasons[i]);
         reasonIndex=0;premiumReasonIndex=0;
         set("reasonText",lines[0]);set("reasonCounter","Motivo 1 de 100");showPremiumReason();
+        document.body.classList.remove("delivered-loading");
       }catch(error){
         console.error("Falha ao carregar site entregue:",error);
+        document.body.classList.remove("delivered-loading");
         set("loveMessage","Não foi possível carregar os dados deste pedido. Tente atualizar a página.");
       }
     })();
