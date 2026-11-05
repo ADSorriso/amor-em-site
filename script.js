@@ -736,14 +736,57 @@ function generatePreview() {
   }, 900);
 }
 
+// Player exclusivo da prévia integrada ao editor.
+// A chamada a play() ocorre diretamente no clique do usuário, sem navegação.
+const inlineMusic = new Audio();
+inlineMusic.loop = true;
+inlineMusic.preload = "none";
+const inlineMusicButton = document.getElementById("inlineMusicButton");
+let inlineMusicSelected = "";
+function syncInlineMusicButton() {
+  if (!inlineMusicButton) return;
+  inlineMusicButton.textContent = inlineMusic.paused ? "♫" : "❚❚";
+  inlineMusicButton.title = inlineMusic.paused ? "Reproduzir música" : "Pausar música";
+  inlineMusicButton.setAttribute("aria-label", inlineMusicButton.title);
+}
+function playInlinePreviewMusic() {
+  const chosen = MUSIC_LIBRARY.find(song => song.value === musicInput?.value);
+  if (!chosen) return;
+  if (inlineMusicSelected !== chosen.file) {
+    inlineMusicSelected = chosen.file;
+    inlineMusic.src = new URL(chosen.file, document.baseURI).href;
+  }
+  const result = inlineMusic.play();
+  if (result?.catch) result.catch(error => {
+    console.warn("Não foi possível iniciar a música da prévia:", error);
+    syncInlineMusicButton();
+  });
+  syncInlineMusicButton();
+}
+inlineMusic.addEventListener("play", syncInlineMusicButton);
+inlineMusic.addEventListener("pause", syncInlineMusicButton);
+inlineMusic.addEventListener("error", () => {
+  console.error("Erro ao carregar MP3:", inlineMusic.currentSrc, inlineMusic.error);
+  syncInlineMusicButton();
+});
+inlineMusicButton?.addEventListener("click", () => {
+  if (inlineMusic.paused) playInlinePreviewMusic();
+  else inlineMusic.pause();
+});
+musicInput?.addEventListener("change", () => {
+  if (!inlineMusic.paused) playInlinePreviewMusic();
+});
+
 generatePreviewButton?.addEventListener(
   "click",
   async (event) => {
     event.preventDefault();
 
-    // Sem plano selecionado, abre a prévia Romântica como padrão.
+    // Prévia gratuita fica nesta tela; iniciar áudio durante o clique.
     if (!selectedPlan) {
-      await openPreviewForPlan("romantico");
+      generatePreview();
+      playInlinePreviewMusic();
+      document.getElementById("lovePreview")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
