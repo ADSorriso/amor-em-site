@@ -46,32 +46,26 @@
       <h1 id="title">Estamos preparando <em>seu site.</em></h1>
       <p class="lead" id="lead">Estamos confirmando o pagamento e buscando os dados da sua compra.</p>
       <div class="spinner" id="spinner"></div>
-
       <div class="status hidden" id="statusBox">
         <div class="row"><span>Plano</span><strong id="plan">—</strong></div>
         <div class="row"><span>Para</span><strong id="loveName">—</strong></div>
         <div class="row"><span>Valor</span><strong id="amount">—</strong></div>
         <div class="row"><span>Status</span><strong id="statusText">—</strong></div>
       </div>
-
       <div class="linkbox hidden" id="linkBox">
         <small>SEU SITE ESTÁ PRONTO ❤️</small>
         <code id="siteLink">—</code>
       </div>
-
       <div class="actions hidden" id="successActions">
         <a class="primary" id="openSite" href="#">ABRIR MEU SITE ♥</a>
         <button class="secondary" id="copyLink" type="button">COPIAR LINK</button>
       </div>
-
       <div class="actions hidden" id="retryActions">
         <button class="secondary" id="retry" type="button">VERIFICAR NOVAMENTE</button>
       </div>
-
       <p class="muted" id="muted">Não feche esta página enquanto confirmamos o pagamento.</p>
     </section>
   </main>
-
 <script>
 (function(){
   const API_URL="https://amor-em-site-backend.vercel.app";
@@ -79,31 +73,23 @@
   const order=params.get("order")||"";
   const forcedStatus=params.get("status")||"success";
   const $=id=>document.getElementById(id);
-
   const names={essencial:"Essencial",romantico:"Romântico",premium:"Premium"};
   const money=v=>typeof v==="number"?v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}):String(v||"—");
-
   let timer=null;
   let attempts=0;
   const maxAttempts=30;
-
   function setLoading(title,lead){
     $("title").innerHTML=title;
     $("lead").textContent=lead;
     $("spinner").classList.remove("hidden");
   }
-
   function buildSiteUrl(o){
     if(!o.site_slug) return "";
-
-    return `${location.origin}/emilly/site.html?pedido=${encodeURIComponent(o.site_slug)}`;
+    return `https://adsorriso.github.io/amor-em-site/site.html?pedido=${encodeURIComponent(o.site_slug)}`;
   }
-
   function showFinal(o){
-    // O site público deste projeto fica em /emilly/.
-    // Priorizamos esse endereço para não depender de um site_url antigo salvo no banco.
-    const siteUrl=buildSiteUrl(o) || o.site_url || "";
-
+    // Endereço oficial do Amor em Site; nunca direcionar ao projeto antigo /emilly/.
+    const siteUrl=buildSiteUrl(o);
     $("icon").textContent="✓";
     $("eyebrow").textContent="PAGAMENTO CONFIRMADO";
     $("title").innerHTML="Seu site está <em>pronto.</em> ❤️";
@@ -119,20 +105,15 @@
     $("siteLink").textContent=siteUrl;
     $("openSite").href=siteUrl;
     $("muted").textContent="Guarde este link. Você pode enviar para quem quiser e abrir em qualquer dispositivo.";
-
     $("copyLink").onclick=async()=>{
       try{
         await navigator.clipboard.writeText(siteUrl);
         $("copyLink").textContent="LINK COPIADO ✓";
         setTimeout(()=>$("copyLink").textContent="COPIAR LINK",1800);
-      }catch(e){
-        alert(siteUrl);
-      }
+      }catch(e){alert(siteUrl);}
     };
-
     if(timer)clearTimeout(timer);
   }
-
   function showWaiting(){
     $("eyebrow").textContent="PAGAMENTO RECEBIDO";
     $("title").innerHTML="Quase tudo <em>pronto.</em>";
@@ -141,7 +122,6 @@
     $("retryActions").classList.remove("hidden");
     $("muted").textContent="Se o pagamento acabou de ser aprovado, essa confirmação pode levar alguns segundos.";
   }
-
   function showFailure(message){
     $("icon").textContent="!";
     $("eyebrow").textContent="NÃO FOI POSSÍVEL FINALIZAR";
@@ -151,61 +131,30 @@
     $("retryActions").classList.remove("hidden");
     $("muted").textContent="Se você acredita que o pagamento foi concluído, aguarde alguns segundos e tente novamente.";
   }
-
   async function check(){
-    if(!order){
-      showFailure("O identificador do pedido não foi encontrado nesta página.");
-      return;
-    }
-
-    if(forcedStatus==="cancelled"){
-      showFailure("O checkout foi cancelado. Nenhum site foi liberado.");
-      return;
-    }
-
-    if(forcedStatus==="expired"){
-      showFailure("O checkout expirou. Nenhum site foi liberado.");
-      return;
-    }
-
+    if(!order){showFailure("O identificador do pedido não foi encontrado nesta página.");return;}
+    if(forcedStatus==="cancelled"){showFailure("O checkout foi cancelado. Nenhum site foi liberado.");return;}
+    if(forcedStatus==="expired"){showFailure("O checkout expirou. Nenhum site foi liberado.");return;}
     attempts++;
-
     try{
-      const r=await fetch(
-        `${API_URL}/api/get-order?order=${encodeURIComponent(order)}`,
-        {cache:"no-store"}
-      );
-
+      const r=await fetch(`${API_URL}/api/get-order?order=${encodeURIComponent(order)}`,{cache:"no-store"});
       const j=await r.json().catch(()=>({}));
-
-      if(r.ok && j.ok && j.order && j.order.status==="PAID" && j.order.site_slug){
-        showFinal(j.order);
-        return;
-      }
-    }catch(e){
-      console.error(e);
-    }
-
+      if(r.ok && j.ok && j.order && j.order.status==="PAID" && j.order.site_slug){showFinal(j.order);return;}
+    }catch(e){console.error(e);}
     if(attempts>=maxAttempts){
       showWaiting();
       $("muted").textContent="Ainda não recebemos a confirmação final. Você pode verificar novamente agora ou voltar depois usando o mesmo pedido.";
       return;
     }
-
     showWaiting();
     timer=setTimeout(check,2000);
   }
-
   $("retry").onclick=()=>{
     attempts=0;
     $("retryActions").classList.add("hidden");
-    setLoading(
-      "Estamos preparando <em>seu site.</em>",
-      "Estamos confirmando o pagamento e buscando os dados da sua compra."
-    );
+    setLoading("Estamos preparando <em>seu site.</em>","Estamos confirmando o pagamento e buscando os dados da sua compra.");
     check();
   };
-
   check();
 })();
 </script>
