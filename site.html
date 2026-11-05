@@ -1122,8 +1122,34 @@ body.delivered-site.delivered-single-photo .px-story-card{position:relative!impo
  body.delivered-site .px-story-wall,body.delivered-site .px-memory-wall{width:100%!important}
 }
 </style>
+<style id="site-welcome-css">
+/* Tela de abertura dos sites entregues (não afeta a prévia comercial) */
+body.delivered-site:not(.site-entered){overflow:hidden!important}
+.site-welcome{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 42%,#320918 0%,#10050b 42%,#050305 82%);color:#fff;text-align:center;overflow:auto}
+body.delivered-site:not(.site-entered) .site-welcome{display:flex}
+.site-welcome-inner{width:min(550px,100%);margin:auto;display:flex;flex-direction:column;align-items:center;gap:22px}
+.site-welcome-eyebrow{font-size:10px;letter-spacing:3px;font-weight:700;color:#ff7188}
+.site-welcome-heart{font-size:58px;line-height:1;color:#ff3158;filter:drop-shadow(0 0 28px #ff315880)}
+.site-welcome h2{font-size:clamp(40px,8vw,72px);line-height:1.1;font-weight:600;letter-spacing:-1.5px}
+.site-welcome h2 em{font-family:"Great Vibes",cursive;color:#ff3158;font-weight:400}
+.site-welcome p{max-width:430px;color:#b6a5ac;font-size:15px;line-height:1.7}
+.site-welcome-enter{padding:17px 28px;border-radius:999px;background:linear-gradient(135deg,#ff3158,#ad0037);color:white;font-weight:800;cursor:pointer;box-shadow:0 16px 45px #ff315833}
+.site-welcome-enter:disabled{opacity:.65;cursor:wait}
+.site-welcome-note{font-size:11px;color:#8c7780;line-height:1.5}
+.site-welcome[hidden]{display:none!important}
+</style>
 </head>
 <body class="preview-mode">
+<div id="siteWelcome" class="site-welcome" hidden aria-label="Boas-vindas ao site personalizado">
+ <div class="site-welcome-inner">
+  <span class="site-welcome-eyebrow">UM PRESENTE ESPECIAL PARA VOCÊ</span>
+  <div class="site-welcome-heart" aria-hidden="true">♥</div>
+  <h2>Uma história feita de <em>amor.</em></h2>
+  <p>Cada lembrança, cada sorriso, cada momento. Tudo preparado especialmente para você.</p>
+  <button id="siteWelcomeEnter" class="site-welcome-enter" type="button" disabled>Preparando sua surpresa...</button>
+  <span class="site-welcome-note" id="siteWelcomeNote">Aguarde enquanto carregamos sua história.</span>
+ </div>
+</div>
 <div id="hearts" aria-hidden="true"></div>
 
 
@@ -1389,6 +1415,11 @@ body.delivered-site.delivered-single-photo .px-story-card{position:relative!impo
   const data=(()=>{try{return JSON.parse(sessionStorage.getItem("amorEmSitePreview")||"null")}catch(e){return null}})();
   const params=new URLSearchParams(location.search);
   const paid=params.get("pedido")||params.get("order");
+  const welcome=document.getElementById("siteWelcome");
+  const welcomeEnter=document.getElementById("siteWelcomeEnter");
+  const welcomeNote=document.getElementById("siteWelcomeNote");
+  if(paid){welcome.hidden=false;document.body.classList.add("delivered-site");}
+
   if(!data && !paid){ location.href="index.html#planos"; return; }
   const prices={essencial:"R$ 10,90",romantico:"R$ 39,90",premium:"R$ 59,90"};
   const names={essencial:"Essencial",romantico:"Romântico",premium:"Premium"};
@@ -1487,6 +1518,14 @@ body.delivered-site.delivered-single-photo .px-story-card{position:relative!impo
   audio.addEventListener("pause",()=>{$("musicButton").textContent="♫";});
   audio.addEventListener("error",()=>{console.warn("Erro ao carregar MP3:",audio.currentSrc);});
   sessionStorage.removeItem("amorEmSiteAutoplayMusic");
+  welcomeEnter.addEventListener("click",()=>{
+    if(welcomeEnter.disabled)return;
+    // A chamada de play() ocorre diretamente no clique para respeitar as regras do navegador.
+    void playMusic();
+    document.body.classList.add("site-entered");
+    welcome.hidden=true;
+    window.scrollTo({top:0,behavior:"instant"});
+  });
   $("openMusic").onclick=()=>{
     // Chamar play() imediatamente dentro do gesto do usuário, sem aguardar scroll/animação.
     void playMusic();
@@ -1585,11 +1624,17 @@ body.delivered-site.delivered-single-photo .px-story-card{position:relative!impo
         lines=Array.from({length:100},(_,i)=>custom[i]||[saved[`reason${i+1}`],o[`reason_${i+1}`],defaultReasons[i]].find(Boolean)||defaultReasons[i]);
         reasonIndex=0;premiumReasonIndex=0;
         set("reasonText",lines[0]);set("reasonCounter","Motivo 1 de 100");showPremiumReason();
+        welcomeEnter.disabled=false;
+        welcomeEnter.textContent="Entrar no nosso mundo ♥";
+        welcomeNote.textContent=musicFile?"♫ Toque para abrir a surpresa com música.":"♥ Toque para abrir sua surpresa.";
         document.body.classList.remove("delivered-loading");
       }catch(error){
         console.error("Falha ao carregar site entregue:",error);
         document.body.classList.remove("delivered-loading");
         set("loveMessage","Não foi possível carregar os dados deste pedido. Tente atualizar a página.");
+        welcomeEnter.disabled=true;
+        welcomeEnter.textContent="Não foi possível abrir a surpresa";
+        welcomeNote.textContent="Não conseguimos carregar o pedido. Atualize a página para tentar novamente.";
       }
     })();
   }
