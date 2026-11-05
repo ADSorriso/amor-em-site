@@ -101,3 +101,93 @@ body.preview-mode:not(.premium-mode) .hero-photo img {
     border-radius: 22px !important;
   }
 }
+
+/* AMOR EM SITE — RESPONSIVIDADE MOBILE 2026-11
+   Somente apresentação: não altera pedidos, fotos, música ou pagamentos. */
+@media (max-width: 700px) {
+  html, body { max-width:100%; overflow-x:clip; }
+  .navbar { height:64px !important; padding:0 14px !important; gap:10px; }
+  .navbar .logo { font-size:clamp(19px,5.5vw,24px); white-space:nowrap; min-width:0; }
+  .navbar nav { display:none !important; }
+  .navbar .love-pill { flex-shrink:0; padding:9px 12px; font-size:11px; }
+  .hero { min-height:100svh; padding:108px 16px 65px !important; }
+  .hero-content, .hero-data { width:100%; min-width:0; max-width:100%; }
+  .hero h1 { font-size:clamp(39px,11vw,62px) !important; letter-spacing:-1.5px !important; line-height:1.13 !important; overflow-wrap:anywhere; margin:20px 0 18px !important; }
+  .hero h1 em { overflow-wrap:anywhere; }
+  .hero .preview-message { font-size:14px; line-height:1.65; padding:0 4px; overflow-wrap:anywhere; }
+  .hero-photo, body.preview-mode:not(.premium-mode) .hero-photo { width:min(100%,440px) !important; margin:25px auto 0 !important; border-radius:19px !important; }
+  .hero-photo img, body.preview-mode:not(.premium-mode) .hero-photo img { width:100% !important; height:auto !important; max-height:none !important; object-fit:contain !important; }
+  .hero .preview-date { max-width:100%; overflow-wrap:anywhere; letter-spacing:1.5px !important; }
+  .primary-btn, .checkout-final button { max-width:100%; justify-content:center; text-align:center; line-height:1.4; }
+  .section, #historia, #momentos, #momentos-grid, #motivos, .letter-section { padding:72px 16px !important; }
+  .section-heading { margin-bottom:32px !important; padding:0 4px; }
+  .section-heading h2, #motivos h2 { font-size:clamp(32px,9vw,44px) !important; line-height:1.14 !important; overflow-wrap:anywhere; }
+  .section-heading p { font-size:13px; }
+  .preview-story-card { max-width:100%; }
+  .preview-photo-grid { grid-template-columns:1fr !important; width:100%; }
+  .preview-photo-grid .photo-card { height:auto !important; aspect-ratio:4/3; min-height:0; }
+  .preview-photo-grid img { width:100%; height:100%; object-fit:cover; }
+  .heart-section .section-heading { margin-bottom:20px !important; }
+  .heart-gallery { width:350px !important; max-width:none !important; transform:scale(.86) !important; transform-origin:top center !important; left:auto; margin:0 auto -55px !important; margin-bottom:0 !important; }
+  #motivos { min-height:0 !important; }
+  #motivos .reason-card { width:100% !important; min-height:110px !important; padding:20px 16px !important; gap:12px; }
+  #motivos .reason-card p { font-size:clamp(19px,5.5vw,25px) !important; overflow-wrap:anywhere; }
+  .envelope { width:100%; height:clamp(190px,58vw,300px); }
+  .letter-paper { width:100%; padding:26px 18px; }
+  .letter-content, .letter-content p { overflow-wrap:anywhere; }
+  .future-section { min-height:0; padding:80px 18px; }
+  .future-content h2 { font-size:clamp(36px,9vw,52px); }
+  .future-grid span { padding:10px 13px; font-size:12px; }
+  .surprise-section { min-height:0; padding:90px 18px; }
+  .surprise-section h2 { font-size:clamp(37px,10vw,55px); overflow-wrap:anywhere; }
+  .checkout-final { padding:85px 18px 90px; }
+  .checkout-final h2 { font-size:clamp(34px,9vw,49px); line-height:1.14; overflow-wrap:anywhere; }
+  .checkout-final p { font-size:13px; }
+  .music-button { right:14px; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); width:48px; height:48px; }
+  .modal { padding:14px; }
+  .modal img { max-width:100%; max-height:82dvh; object-fit:contain; }
+  .locked-overlay { padding:12px; }
+  .locked-box { width:100%; max-width:360px; padding:20px 15px; }
+  .preview-toast, .toast { width:max-content; max-width:calc(100vw - 24px); text-align:center; }
+  /* Premium: mantém a identidade visual e evita fotos sobrepostas fora da tela. */
+  .px-hero { display:flex; flex-direction:column; align-items:stretch; min-height:0; padding:100px 16px 48px !important; gap:28px; }
+  .px-copy { width:100%; max-width:100%; text-align:center; }
+  .px-copy h1 { font-size:clamp(42px,11vw,58px) !important; line-height:1.05; overflow-wrap:anywhere; }
+  .px-copy p { font-size:14px; }
+  .px-collage { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; width:100%; min-height:0 !important; }
+  .px-collage .px-photo { position:relative !important; inset:auto !important; left:auto !important; right:auto !important; top:auto !important; bottom:auto !important; transform:none !important; width:100%; max-width:100% !important; padding:6px 6px 10px; }
+  .px-collage .px-photo img { width:100% !important; height:clamp(125px,39vw,225px) !important; max-height:none !important; object-fit:contain !important; }
+  .px-collage .px-photo figcaption { font-size:15px; line-height:1.1; }
+  .px-name { width:100%; }
+  .px-name strong { font-size:clamp(32px,9vw,48px); overflow-wrap:anywhere; }
+  .px-stats { width:calc(100% - 32px); margin:0 auto; }
+  .px-stats>div { min-height:68px; }
+  .px-section { padding:78px 16px !important; }
+  .px-heading h2 { font-size:clamp(37px,9vw,54px); line-height:1.1; overflow-wrap:anywhere; }
+  .px-story-wall, .px-memory-wall { width:100%; min-height:0 !important; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:30px auto 0; }
+  .px-story-wall .px-photo, .px-memory-wall .px-photo { position:relative !important; inset:auto !important; left:auto !important; right:auto !important; top:auto !important; bottom:auto !important; transform:none !important; width:100%; max-width:100% !important; }
+  .px-story-wall .px-photo img, .px-memory-wall .px-photo img { width:100% !important; height:auto !important; max-height:250px !important; object-fit:contain !important; }
+  .px-story-card { position:relative !important; inset:auto !important; left:auto !important; top:auto !important; transform:none !important; grid-column:1/-1; width:100% !important; padding:22px 18px; }
+  .px-reason-stage { width:100%; display:grid; grid-template-columns:1fr; gap:10px; }
+  .px-reason-card { padding:22px 15px; min-height:120px; }
+  .px-reason-card p { font-size:clamp(19px,5.5vw,26px); overflow-wrap:anywhere; }
+  .px-letter-paper { width:100%; padding:26px 18px; }
+  .px-future, .px-surprise, .px-features { padding:78px 16px; }
+  .px-future h2, .px-surprise h2, .px-feature-copy h2 { font-size:clamp(36px,9vw,54px); overflow-wrap:anywhere; }
+  .px-feature-grid { width:100%; grid-template-columns:1fr; }
+  .px-checkout { width:calc(100% - 32px); padding:25px 18px; grid-template-columns:1fr; text-align:center; gap:22px; }
+  .px-checkout-action { min-width:0; width:100%; }
+  .px-checkout-action button { white-space:normal; }
+}
+@media(max-width:380px){
+  .navbar .logo { font-size:19px; }
+  .navbar .love-pill { font-size:10px; padding:8px 10px; }
+  .hero h1 { font-size:clamp(35px,10vw,43px) !important; }
+  .px-collage, .px-story-wall, .px-memory-wall { gap:8px; }
+  .px-photo figcaption { font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .reveal, .floating-heart, .big-heart { animation:none !important; transition:none !important; }
+}
+
+@media(max-width:390px){ .heart-gallery{transform:scale(.72) !important; margin-bottom:-110px !important;} }
