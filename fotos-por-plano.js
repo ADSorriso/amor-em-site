@@ -1,17 +1,16 @@
 /* Amor em Site — Upload de fotos por plano. Sem alterar Asaas ou Supabase.
-   A foto principal permanece sob responsabilidade do script.js original.
-   Este complemento prepara e guarda apenas as fotos ADICIONAIS da personalização. */
+   Usa UM ÚNICO campo de fotos no formulário: a primeira vira foto principal
+   e as demais entram como fotos extras da personalização. */
 (() => {
   'use strict';
   const LIMITS = Object.freeze({ essencial: 1, romantico: 8, premium: 12 });
   const STORAGE_KEY = 'amorEmSiteFotosExtras';
   const MAX_ORIGINAL_BYTES = 10 * 1024 * 1024;
-  // Restrições conservadoras: mantêm o pedido abaixo dos limites comuns de APIs
-  // e permitem armazenar as fotos em site_data sem mudar a estrutura do banco.
   const MAX_PREPARED_BYTES = 1.45 * 1024 * 1024;
   const MAX_IMAGE_DATA_URL_CHARS = 125000;
-  let selectedFiles = [];
+  let selectedExtras = [];
   let selectedThumbnails = [];
+  let totalSelected = 0;
   let busy = false;
   let currentPlan = '';
   let buildNumber = 0;
@@ -26,46 +25,21 @@
       return false;
     }
   }
-  function reset(plan) {
-    currentPlan = plan;
-    selectedFiles = [];
-    selectedThumbnails = [];
-    buildNumber++;
-    safeSet({ plan, photos: [] });
-    const input = document.getElementById('pemExtraPhotosInput');
-    if (input) input.value = '';
-    paint();
-  }
+
   function planLimit() {
     return LIMITS[currentPlan] ?? 1;
   }
-  function paint() {
-    const info = document.getElementById('pemExtraPhotosInfo');
-    const previews = document.getElementById('pemExtraPhotosPreviews');
-    const input = document.getElementById('pemExtraPhotosInput');
-    const card = document.getElementById('pemExtraPhotosCard');
-    if (!info || !previews || !input || !card) return;
-    const extraLimit = planLimit() - 1;
-    card.hidden = extraLimit === 0;
-    input.disabled = extraLimit === 0 || busy;
-    input.setAttribute('aria-label', `Adicionar até ${extraLimit} fotos além da foto principal`);
-    info.textContent = busy
-      ? 'Preparando imagens, não envie o formulário ainda...'
-      : `Este plano permite ${planLimit()} foto${planLimit() !== 1 ? 's' : ''} no total. ` +
-        `${selectedFiles.length} de ${extraLimit} foto${extraLimit !== 1 ? 's' : ''} adicional${extraLimit !== 1 ? 'is' : ''} selecionada${selectedFiles.length !== 1 ? 's' : ''}.`;
-    previews.replaceChildren();
-    selectedFiles.forEach((file, index) => {
-      const thumb = document.createElement('div');
-      thumb.className = 'aesp-preview';
-      const image = document.createElement('img');
-      image.src = selectedThumbnails[index] || '';
-      image.alt = `Foto adicional ${index + 1}`;
-      const caption = document.createElement('span');
-      caption.textContent = `${index + 2}. ${file.name}`;
-      caption.title = file.name;
-      thumb.append(image, caption);
-      previews.append(thumb);
-    });
+
+  function reset(plan) {
+    currentPlan = plan;
+    selectedExtras = [];
+    selectedThumbnails = [];
+    totalSelected = 0;
+    buildNumber++;
+    safeSet({ plan, photos: [] });
+    const input = document.getElementById('pemPhoto');
+    if (input) input.value = '';
+    paint();
   }
 
   function prepareImage(file) {
@@ -108,7 +82,9 @@
             } else {
               resolve(output);
             }
-          } catch (error) { reject(new Error('Não foi possível comprimir esta foto.')); }
+          } catch {
+            reject(new Error('Não foi possível comprimir esta foto.'));
+          }
         };
         image.src = String(reader.result);
       };
@@ -116,32 +92,105 @@
     });
   }
 
+  function installStyles() {
+    if (document.getElementById('aesp-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'aesp-styles';
+    style.textContent = `
+      #pemPhotosInfo{display:block;margin-top:8px;color:#845767;font-size:12px;line-height:1.5;}
+      #pemPhotosPreviews{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:9px;margin-top:12px;grid-column:1/-1;}
+      #pemPhotosPreviews .aesp-preview{min-width:0;background:#fff;border:1px solid #f5bccb;border-radius:12px;padding:6px;}
+      #pemPhotosPreviews img{display:block;width:100%;height:82px;object-fit:cover;border-radius:8px;background:#fce0e8;}
+      #pemPhotosPreviews span{display:block;font-size:11px;color:#7b2e46;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;}
+    `;
+    document.head.append(style);
+  }
+
+  function paint() {
+    const input = document.getElementById('pemPhoto');
+    const label = document.querySelector('label[for="pemPhoto"]');
+    const info = document.getElementById('pemPhotosInfo');
+    const previews = document.getElementById('pemPhotosPreviews');
+    if (!input || !label || !info || !previews) return;
+
+    const limit = planLimit();
+    const multipleAllowed = limit > 1;
+    label.textContent = multipleAllowed ? `Fotos do casal (até ${limit}) *` : 'Foto do casal *';
+    input.multiple = multipleAllowed;
+    input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
+    input.disabled = busy;
+
+    if (busy) {
+      info.textContent = 'Preparando imagens, não envie o formulário ainda...';
+    } else if (totalSelected > 0) {
+      const extras = Math.max(0, totalSelected - 1);
+      info.textContent = limit === 1
+        ? 'Plano Essencial: 1 foto selecionada.'
+        : `Este plano permite ${limit} fotos no total. ${totalSelected} de ${limit} selecionada${totalSelected !== 1 ? 's' : ''} (${extras} adicional${extras !== 1 ? 'is' : ''}).`;
+    } else {
+      info.textContent = limit === 1
+        ? 'Selecione 1 foto para este plano.'
+        : `Selecione de 1 até ${limit} fotos neste único campo.`;
+    }
+
+    previews.replaceChildren();
+    selectedExtras.forEach((file, index) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'aesp-preview';
+      const image = document.createElement('img');
+      image.src = selectedThumbnails[index] || '';
+      image.alt = `Foto ${index + 2}`;
+      const caption = document.createElement('span');
+      caption.textContent = `${index + 2}. ${file.name}`;
+      caption.title = file.name;
+      thumb.append(image, caption);
+      previews.append(thumb);
+    });
+  }
+
   async function changed(event) {
     if (busy) return;
     const files = [...(event.target.files || [])];
-    if (files.length > planLimit() - 1) {
-      alert(`Seu plano permite no máximo ${planLimit()} fotos, contando a foto principal.`);
-      event.target.value = '';
+    totalSelected = files.length;
+    if (!files.length) {
+      selectedExtras = [];
+      selectedThumbnails = [];
+      safeSet({ plan: currentPlan, photos: [] });
+      paint();
       return;
     }
+    if (files.length > planLimit()) {
+      alert(`Seu plano permite no máximo ${planLimit()} foto${planLimit() !== 1 ? 's' : ''}.`);
+      event.target.value = '';
+      totalSelected = 0;
+      selectedExtras = [];
+      selectedThumbnails = [];
+      safeSet({ plan: currentPlan, photos: [] });
+      paint();
+      return;
+    }
+
+    const extraFiles = files.slice(1);
     const version = ++buildNumber;
     busy = true;
     paint();
     try {
       const prepared = [];
-      for (const file of files) prepared.push(await prepareImage(file));
+      for (const file of extraFiles) prepared.push(await prepareImage(file));
       if (version !== buildNumber) return;
       const estimate = prepared.reduce((sum, image) => sum + image.length, 0);
-      if (estimate > MAX_PREPARED_BYTES) throw new Error('Fotos muito grandes. Selecione imagens menores.');
-      const data = { plan: currentPlan, photos: prepared };
-      if (safeSet(data)) {
-        selectedFiles = files;
+      if (estimate > MAX_PREPARED_BYTES) {
+        throw new Error('Fotos muito grandes. Selecione imagens menores.');
+      }
+      if (safeSet({ plan: currentPlan, photos: prepared })) {
+        selectedExtras = extraFiles;
         selectedThumbnails = prepared;
       }
     } catch (err) {
       alert(err.message || 'Não foi possível preparar suas fotos.');
       event.target.value = '';
-      selectedFiles = [];
+      totalSelected = 0;
+      selectedExtras = [];
       selectedThumbnails = [];
       safeSet({ plan: currentPlan, photos: [] });
     } finally {
@@ -150,40 +199,44 @@
     }
   }
 
-  function installStyles() {
-    if (document.getElementById('aesp-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'aesp-styles';
-    style.textContent = `
-      #pemExtraPhotosCard{grid-column:1/-1;border:1px solid #f5bccb;border-radius:16px;padding:16px;background:#fff6f9;}
-      #pemExtraPhotosCard[hidden]{display:none!important;}
-      #pemExtraPhotosCard label{display:block;font-weight:700;font-size:14px;margin-bottom:8px;}
-      #pemExtraPhotosInput{width:100%;max-width:100%;font-size:13px;}
-      #pemExtraPhotosInfo{display:block;margin-top:8px;color:#845767;font-size:12px;line-height:1.5;}
-      #pemExtraPhotosPreviews{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:9px;margin-top:12px;}
-      #pemExtraPhotosPreviews .aesp-preview{min-width:0;background:#fff;border:1px solid #f5bccb;border-radius:12px;padding:6px;}
-      #pemExtraPhotosPreviews img{display:block;width:100%;height:82px;object-fit:cover;border-radius:8px;background:#fce0e8;}
-      #pemExtraPhotosPreviews span{display:block;font-size:11px;color:#7b2e46;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;}
-    `;
-    document.head.append(style);
+  function ensureMainPhotoUi(modal) {
+    const input = modal.querySelector('#pemPhoto');
+    if (!input) return;
+    installStyles();
+
+    let info = document.getElementById('pemPhotosInfo');
+    if (!info) {
+      info = document.createElement('small');
+      info.id = 'pemPhotosInfo';
+      input.insertAdjacentElement('afterend', info);
+    }
+
+    let previews = document.getElementById('pemPhotosPreviews');
+    if (!previews) {
+      previews = document.createElement('div');
+      previews.id = 'pemPhotosPreviews';
+      info.insertAdjacentElement('afterend', previews);
+    }
+
+    if (!input.dataset.aespPhotosBound) {
+      input.dataset.aespPhotosBound = 'true';
+      input.addEventListener('change', changed);
+    }
+
+    const oldCard = document.getElementById('pemExtraPhotosCard');
+    if (oldCard) oldCard.remove();
   }
+
   function ensureUI() {
     const modal = document.getElementById('planPersonalizationModal');
     if (!modal || !modal.querySelector('#pemPhoto')) return;
-    installStyles();
-    if (!document.getElementById('pemExtraPhotosCard')) {
-      const card = document.createElement('div');
-      card.id = 'pemExtraPhotosCard';
-      card.className = 'pem-field full';
-      card.innerHTML = `
-        <label for="pemExtraPhotosInput">📸 Fotos adicionais do seu plano</label>
-        <input id="pemExtraPhotosInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
-        <small id="pemExtraPhotosInfo" aria-live="polite"></small>
-        <div id="pemExtraPhotosPreviews" aria-live="polite"></div>
-      `;
-      modal.querySelector('#pemPhoto').closest('.pem-field')?.after(card);
-      card.querySelector('input').addEventListener('change', changed);
-      modal.querySelector('#pemForm')?.addEventListener('submit', event => {
+
+    ensureMainPhotoUi(modal);
+
+    const form = modal.querySelector('#pemForm');
+    if (form && !form.dataset.aespSubmitBound) {
+      form.dataset.aespSubmitBound = 'true';
+      form.addEventListener('submit', event => {
         if (busy) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -191,12 +244,12 @@
         }
       }, true);
     }
+
     const plan = modal.dataset.planKey;
     if (!LIMITS[plan]) return;
     if (currentPlan !== plan) reset(plan);
 
     // A data do casal pode ser escolhida no Essencial também.
-    // O script original esconde esse campo; reexibimos após a escolha do plano.
     const dateField = modal.querySelector('[data-pem="date"]');
     if (dateField) dateField.style.display = '';
     const dateInput = document.getElementById('pemDate');
@@ -206,7 +259,6 @@
       ? '📅 Data especial do casal (opcional)'
       : 'Data especial *';
 
-    // No Essencial a história, a carta e até 10 motivos também fazem parte do produto.
     if (plan === 'essencial') {
       modal.querySelectorAll('[data-pem="story"]').forEach(el => { el.style.display = ''; });
       const story = document.getElementById('pemStory');
@@ -249,17 +301,21 @@
       if (help) help.textContent = 'Até 100 motivos, um por linha.';
       document.getElementById('pemReasons')?.setCustomValidity('');
     }
-    const mainLabel = modal.querySelector('label[for="pemPhoto"]');
-    if (mainLabel) mainLabel.textContent = `Foto principal (1 de até ${planLimit()}) *`;
+
     paint();
   }
 
-  // O formulário é criado dinamicamente pelo script.js existente.
   document.addEventListener('click', event => {
-    if (event.target instanceof Element && event.target.closest('[data-plan-id]')) setTimeout(ensureUI, 0);
+    if (event.target instanceof Element && event.target.closest('[data-plan-id]')) {
+      setTimeout(ensureUI, 0);
+    }
   }, true);
+
+  // O modal e criado dinamicamente pelo script principal. Inicializar uma vez
+  // evita que a renderizacao de miniaturas dispare uma cadeia de mutacoes.
   const observer = new MutationObserver(() => {
-    if (document.getElementById('planPersonalizationModal') && !document.getElementById('pemExtraPhotosCard')) ensureUI();
+    const modal = document.getElementById('planPersonalizationModal');
+    if (modal && !document.getElementById('pemPhotosInfo')) ensureUI();
   });
   observer.observe(document.body, { childList: true, subtree: true });
   ensureUI();
