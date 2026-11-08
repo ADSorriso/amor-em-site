@@ -1495,6 +1495,74 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
   $("envelope").onclick=()=>{if(!romantic)return;$("envelope").classList.toggle("opened");$("letterPaper").classList.toggle("open")};
   $("surpriseButton").onclick=()=>{if(!romantic)return;$("surpriseBefore").style.display="none";$("surpriseAfter").classList.remove("hidden");burst(28)};
 
+  // Essencial: mesma experiência na prévia e após o pagamento.
+  // Não muda a autenticação, o checkout ou os recursos do Romântico/Premium.
+  function activateEssentialExperience(storyText) {
+    document.body.classList.add(paid ? "essential-delivered" : "essential-preview");
+
+    // Liberar história, até 10 motivos e envelope da carta.
+    ["storySection", "motivos", "carta"].forEach(id => {
+      $(id)?.classList.remove("is-locked");
+    });
+
+    // A PREVIA de teste exibe TODAS as secoes (incluindo extras bloqueados).
+    // So na versao paga do Essencial removemos recursos de outros planos.
+    if (paid) {
+      ["momentos", "momentos-grid", "surpresa"].forEach(id => {
+        const section = $(id);
+        if (section) section.hidden = true;
+      });
+      document.querySelectorAll(".navbar nav a").forEach(link => {
+        if (["#momentos", "#surpresa"].includes(link.getAttribute("href"))) {
+          link.hidden = true;
+        }
+      });
+    }
+
+    // Exibir a história personalizada no lugar dos três cards fictícios.
+    const container = $("storySection")?.querySelector(".preview-story-demo");
+    if (container) {
+      const card = document.createElement("article");
+      card.className = "preview-story-card";
+      const heart = document.createElement("span");
+      heart.textContent = "♥";
+      const content = document.createElement("div");
+      const caption = document.createElement("small");
+      caption.textContent = "NOSSA HISTÓRIA";
+      const heading = document.createElement("h3");
+      heading.textContent = "Como tudo começou";
+      const paragraph = document.createElement("p");
+      paragraph.textContent = String(storyText || "").trim() ||
+        "Uma história feita de pequenos momentos que se tornaram especiais.";
+      content.append(caption, heading, paragraph);
+      card.append(heart, content);
+      container.replaceChildren(card);
+    }
+
+    // Mostrar apenas os 10 primeiros motivos, um por vez, sem grade extra.
+    const eyebrow = $("motivos")?.querySelector(".eyebrow");
+    if (eyebrow) eyebrow.textContent = "10 MOTIVOS PARA TE AMAR";
+    reasonIndex = 0;
+    set("reasonText", lines[0]);
+    set("reasonCounter", "Motivo 1 de 10");
+    $("nextReason").onclick = () => {
+      reasonIndex = (reasonIndex + 1) % 10;
+      set("reasonText", lines[reasonIndex]);
+      set("reasonCounter", `Motivo ${reasonIndex + 1} de 10`);
+    };
+
+    // Carta interativa abre e fecha com texto digitado na personalização.
+    $("envelope").onclick = () => {
+      $("envelope").classList.toggle("opened");
+      $("letterPaper").classList.toggle("open");
+    };
+    $("letterText").style.whiteSpace = "pre-wrap";
+  }
+
+  // A prévia comercial do Essencial já mostra os mesmos 3 recursos.
+  // Neste momento a página usa somente os dados locais da personalização.
+  if (!paid && plan === "essencial") activateEssentialExperience(current.loveStory);
+
   // Áudio da prévia: respeita a escolha, tenta autoplay e oferece ação visível
   // quando o navegador exige um toque/clique para permitir som.
   const audio=$("music");
@@ -1555,7 +1623,7 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
     if(!data){location.href="index.html#planos";return}
     const b=$("checkoutButtonFinal");b.disabled=true;b.textContent="Preparando pagamento...";
     try{
-      const payload={plan:data.plan,customer:{loveName:data.loveName||"",yourName:data.yourName||"",loveMessage:data.loveMessage||"",loveDate:data.loveDate||"",loveMusic:data.loveMusic||"",loveStory:data.loveStory||"",reason1:lines[0]||"",reason2:lines[1]||"",reason3:lines[2]||"",reasons100:data.reasons100||"",loveLetter:data.loveLetter||"",loveSurprise:data.loveSurprise||"",photoData:data.photoData||"",customization:data.customization||{}}};
+      const payload={plan:data.plan,customer:{loveName:data.loveName||"",yourName:data.yourName||"",loveMessage:data.loveMessage||"",loveDate:data.loveDate||"",loveMusic:data.loveMusic||"",loveStory:data.loveStory||"",reason1:lines[0]||"",reason2:lines[1]||"",reason3:lines[2]||"",reasons100:data.reasons100||"",loveLetter:data.loveLetter||"",loveSurprise:data.loveSurprise||"",photoData:data.photoData||"",customization:{...(data.customization||{}),photosData:extraPhotosForCheckout()}}};
       const r=await fetch(`${API_URL}/api/create-checkout`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const result=await r.json().catch(()=>({}));
       if(!r.ok||!result.link)throw new Error(result.error||result.message||"Não foi possível criar o pagamento.");location.href=result.link;
     }catch(e){alert(e.message||"Não foi possível iniciar o pagamento.");b.disabled=false;b.textContent="Continuar para pagamento ❤️"}
@@ -1564,6 +1632,56 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
   function burst(n){for(let i=0;i<n;i++){const h=document.createElement("span");h.textContent="♥";h.className="floating-heart";h.style.left=`${Math.random()*100}%`;h.style.fontSize=`${12+Math.random()*22}px`;h.style.animationDuration=`${3+Math.random()*5}s`;$("hearts").appendChild(h);setTimeout(()=>h.remove(),9000)}}
   setInterval(()=>burst(1),2200);
   const observer=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add("visible")}),{threshold:.12});document.querySelectorAll(".reveal").forEach(e=>observer.observe(e));
+
+  // Fotos por plano: principal + extras comprimidas e guardadas na personalizacao.
+  const PHOTO_LIMITS = { essencial: 1, romantico: 8, premium: 12 };
+  const PREMIUM_PHOTO_SLOTS = [
+    "premiumPhoto1", "premiumPhoto2", "premiumPhoto3", "premiumPhoto4",
+    "premiumStory1", "premiumStory2", "premiumStory3",
+    "premiumMemory1", "premiumMemory2", "premiumMemory3", "premiumMemory4", "premiumMemory5"
+  ];
+  function isValidPhoto(src) {
+    return typeof src === "string" &&
+      (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(src) || /^https:\/\//i.test(src));
+  }
+  function additionalPhotosPreview() {
+    try {
+      const data = JSON.parse(sessionStorage.getItem("amorEmSiteFotosExtras") || "null");
+      return data && data.plan === plan && Array.isArray(data.photos)
+        ? data.photos.filter(isValidPhoto).slice(0, PHOTO_LIMITS[plan] - 1)
+        : [];
+    } catch { return []; }
+  }
+  function extraPhotosForCheckout() {
+    return additionalPhotosPreview();
+  }
+  function populatePhotoSlots(photos, isPaidSite) {
+    const cap = PHOTO_LIMITS[plan] || 1;
+    const list = photos.filter(isValidPhoto).slice(0, cap);
+    if (!list.length) return;
+    if (plan === "romantico") {
+      for (let i = 1; i <= 8; i++) {
+        const el = $("heartPhoto" + i);
+        if (el) el.src = list[(i - 1) % list.length];
+      }
+      for (let i = 1; i <= 3; i++) {
+        const el = $("gridPhoto" + i);
+        if (el) el.src = list[(i - 1) % list.length];
+      }
+    }
+    if (plan === "premium") {
+      PREMIUM_PHOTO_SLOTS.forEach((id, i) => {
+        const el = $(id);
+        if (!el) return;
+        if (list[i]) {
+          el.src = list[i];
+          if (isPaidSite) el.closest("figure")?.removeAttribute("hidden");
+        } else if (isPaidSite) {
+          el.closest("figure")?.setAttribute("hidden", "");
+        }
+      });
+    }
+  }
 
   // Modal de fotos
   const modal=$("photoModal"),modalImage=$("modalImage");document.querySelectorAll(".heart-photo img,.photo-card img").forEach(img=>img.onclick=()=>{if(!img.src)return;modalImage.src=img.src;modal.classList.add("open")});$("closeModal").onclick=()=>modal.classList.remove("open");modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
@@ -1615,17 +1733,22 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
           }
         }
         const image=saved.photoData||o.photo_url||"";
-        if(typeof image==="string" && (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(image)||/^https:\/\//i.test(image))){
+        const savedPhotos = Array.isArray(saved.customization?.photosData)
+          ? saved.customization.photosData.filter(isValidPhoto)
+          : [];
+        const paidPhotos = [image, ...savedPhotos].filter(isValidPhoto)
+          .slice(0, PHOTO_LIMITS[plan] || 1);
+        if(paidPhotos.length){
           const hero=$("heroPhoto");hero.classList.remove("empty");hero.replaceChildren();
-          const img=document.createElement("img");img.src=image;img.alt="Foto de vocês";hero.appendChild(img);
-          // Uma foto enviada não deve virar onze cópias em galerias diferentes.
-          // Mantemos a imagem principal e ocultamos galerias sem fotos próprias.
-          document.body.classList.add("delivered-single-photo");
-          document.querySelectorAll("#momentos, #momentos-grid").forEach(el=>el.hidden=true);
-          // No Premium, mantém a foto na apresentação e oculta as cópias.
-          const premiumHero=$("premiumPhoto1");
-          if(premiumHero) premiumHero.src=image;
-          ["premiumPhoto2","premiumPhoto3","premiumPhoto4","premiumStory1","premiumStory2","premiumStory3","premiumMemory1","premiumMemory2","premiumMemory3","premiumMemory4","premiumMemory5"].forEach(id=>{const el=$(id);if(el)el.closest("figure")?.setAttribute("hidden","");});
+          const img=document.createElement("img");img.src=paidPhotos[0];img.alt="Foto de vocês";hero.appendChild(img);
+          if(paidPhotos.length === 1){
+            // Pedidos antigos e sites com apenas uma foto permanecem organizados.
+            document.body.classList.add("delivered-single-photo");
+            document.querySelectorAll("#momentos, #momentos-grid").forEach(el=>el.hidden=true);
+          } else {
+            document.body.classList.remove("delivered-single-photo");
+          }
+          populatePhotoSlots(paidPhotos, true);
         }
         const music=field("loveMusic","love_music");
         if(music){set("musicName",music);musicFile=musicFiles[music]||musicAliases[music]||"";if(musicFile){audio.src=musicFile;audio.load();}}
@@ -1633,68 +1756,8 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
         lines=Array.from({length:100},(_,i)=>custom[i]||[saved[`reason${i+1}`],o[`reason_${i+1}`],defaultReasons[i]].find(Boolean)||defaultReasons[i]);
         reasonIndex=0;premiumReasonIndex=0;
         set("reasonText",lines[0]);set("reasonCounter","Motivo 1 de 100");showPremiumReason();
-        // ESSENCIAL ENTREGUE: estes recursos são liberados SOMENTE após
-        // a API devolver um pedido pago do plano Essencial.
-        if (plan === "essencial") {
-          document.body.classList.add("essential-delivered");
-
-          // A história, os 10 motivos e a carta ficam totalmente interativos.
-          ["storySection", "motivos", "carta"].forEach(id => {
-            $(id)?.classList.remove("is-locked");
-          });
-
-          // Não mostrar propagandas/cadeados dos planos superiores
-          // dentro do presente comprado pelo cliente.
-          ["momentos", "momentos-grid", "surpresa"].forEach(id => {
-            const section = $(id);
-            if (section) section.hidden = true;
-          });
-          document.querySelectorAll(".navbar nav a").forEach(link => {
-            if (["#momentos", "#surpresa"].includes(link.getAttribute("href"))) {
-              link.hidden = true;
-            }
-          });
-
-          // Trocar os três cards genéricos pela história do próprio cliente.
-          // textContent evita interpretar a personalização como código HTML.
-          const container = $("storySection")?.querySelector(".preview-story-demo");
-          if (container) {
-            const card = document.createElement("article");
-            card.className = "preview-story-card";
-            const heart = document.createElement("span");
-            heart.textContent = "♥";
-            const content = document.createElement("div");
-            const caption = document.createElement("small");
-            caption.textContent = "NOSSA HISTÓRIA";
-            const heading = document.createElement("h3");
-            heading.textContent = "Como tudo começou";
-            const paragraph = document.createElement("p");
-            paragraph.textContent = String(story || "").trim() ||
-              "Nossa história é feita de pequenos momentos que se tornaram especiais.";
-            content.append(caption, heading, paragraph);
-            card.append(heart, content);
-            container.replaceChildren(card);
-          }
-
-          // O Essencial recebe 10 motivos, revelados um por vez.
-          const counterLabel = $("motivos")?.querySelector(".eyebrow");
-          if (counterLabel) counterLabel.textContent = "10 MOTIVOS PARA TE AMAR";
-          reasonIndex = 0;
-          set("reasonText", lines[0]);
-          set("reasonCounter", "Motivo 1 de 10");
-          $("nextReason").onclick = () => {
-            reasonIndex = (reasonIndex + 1) % 10;
-            set("reasonText", lines[reasonIndex]);
-            set("reasonCounter", `Motivo ${reasonIndex + 1} de 10`);
-          };
-
-          // Permitir a abertura e o fechamento da carta no Essencial pago.
-          $("envelope").onclick = () => {
-            $("envelope").classList.toggle("opened");
-            $("letterPaper").classList.toggle("open");
-          };
-          $("letterText").style.whiteSpace = "pre-wrap";
-        }
+        // Configura os mesmos recursos para o Essencial entregue (pedido confirmado).
+        if (plan === "essencial") activateEssentialExperience(story);
         welcomeEnter.disabled=false;
         welcomeEnter.textContent="Entrar no nosso mundo ♥";
         welcomeNote.textContent=musicFile?"♫ Toque para abrir a surpresa com música.":"♥ Toque para abrir sua surpresa.";
@@ -1728,6 +1791,10 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
     ["premiumPhoto1","premiumPhoto2","premiumPhoto3","premiumPhoto4","premiumStory1","premiumStory2","premiumStory3","premiumMemory1","premiumMemory2","premiumMemory3","premiumMemory4","premiumMemory5"]
       .forEach(id=>{const e=$(id);if(e)e.src=photo});
   }
+
+  // Na previsualizacao os visitantes podem testar todas as secoes.
+  // O numero de fotos e limitado ao plano escolhido.
+  if (!paid && photo) populatePhotoSlots([photo, ...additionalPhotosPreview()], false);
 
   $("premiumLetter").innerHTML=esc(letter).replace(/\n/g,"<br>");
   set("premiumSignature",current.yourName?`Com todo meu amor,\n${current.yourName} ♥`:"Com todo meu amor, ♥");
@@ -1763,7 +1830,7 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
     const b=$("premiumCheckoutButton");
     b.disabled=true;b.textContent="Preparando pagamento...";
     try{
-      const payload={plan:data.plan,customer:{loveName:data.loveName||"",yourName:data.yourName||"",loveMessage:data.loveMessage||"",loveDate:data.loveDate||"",loveMusic:data.loveMusic||"",loveStory:data.loveStory||"",reason1:lines[0]||"",reason2:lines[1]||"",reason3:lines[2]||"",reasons100:data.reasons100||"",loveLetter:data.loveLetter||"",loveSurprise:data.loveSurprise||"",photoData:data.photoData||"",customization:data.customization||{}}};
+      const payload={plan:data.plan,customer:{loveName:data.loveName||"",yourName:data.yourName||"",loveMessage:data.loveMessage||"",loveDate:data.loveDate||"",loveMusic:data.loveMusic||"",loveStory:data.loveStory||"",reason1:lines[0]||"",reason2:lines[1]||"",reason3:lines[2]||"",reasons100:data.reasons100||"",loveLetter:data.loveLetter||"",loveSurprise:data.loveSurprise||"",photoData:data.photoData||"",customization:{...(data.customization||{}),photosData:extraPhotosForCheckout()}}};
       const r=await fetch(`${API_URL}/api/create-checkout`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const result=await r.json().catch(()=>({}));
       if(!r.ok||!result.link)throw new Error(result.error||result.message||"Não foi possível criar o pagamento.");
@@ -1824,6 +1891,53 @@ body.delivered-site.essential-delivered #carta .locked-overlay {
 }
 @media(max-width:600px) {
   body.delivered-site.essential-delivered #historia .preview-story-card {
+    padding: 22px 18px;
+  }
+}
+</style>
+<style id="essencial-preview-liberada-css">
+/* Modo de prévia Essencial: espelhar a experiência entregue sem cadeados. */
+body.preview-mode.essential-preview #momentos,
+body.preview-mode.essential-preview #momentos-grid,
+body.preview-mode.essential-preview #surpresa,
+body.essential-preview .navbar nav a[hidden],
+body.essential-delivered .navbar nav a[hidden] {
+  display: none !important;
+}
+body.preview-mode.essential-preview #storySection {
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+body.preview-mode.essential-preview #historia .preview-story-demo {
+  width: min(730px, 100%);
+  margin-inline: auto;
+}
+body.preview-mode.essential-preview #historia .preview-story-card p {
+  white-space: pre-wrap;
+  font-size: clamp(14px, 2vw, 17px);
+  line-height: 1.85;
+  color: #d2c2c8;
+  overflow-wrap: anywhere;
+}
+body.preview-mode.essential-preview #historia .preview-story-card h3 {
+  font-size: clamp(22px, 3vw, 30px);
+}
+body.preview-mode.essential-preview #motivos .reason-grid {
+  display: none !important;
+}
+body.preview-mode.essential-preview #motivos {
+  min-height: 430px !important;
+}
+body.preview-mode.essential-preview #storySection .locked-overlay,
+body.preview-mode.essential-preview #motivos .locked-overlay,
+body.preview-mode.essential-preview #carta .locked-overlay {
+  display: none !important;
+}
+@media(max-width:600px) {
+  body.preview-mode.essential-preview #historia .preview-story-card {
     padding: 22px 18px;
   }
 }
