@@ -113,6 +113,12 @@
       }catch(e){alert(siteUrl);}
     };
     if(timer)clearTimeout(timer);
+    $("title").innerHTML="Preparando <em>sua surpresa.</em> ❤️";
+    $("lead").textContent="Pagamento confirmado! Seu site romantico abrira automaticamente em instantes.";
+    $("muted").textContent="Se o site nao abrir automaticamente, clique em ABRIR MEU SITE.";
+    setTimeout(() => {
+      if(siteUrl) window.location.assign(siteUrl);
+    }, 4000);
   }
   function showWaiting(){
     $("eyebrow").textContent="PAGAMENTO RECEBIDO";
