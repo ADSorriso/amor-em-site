@@ -1633,6 +1633,68 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
         lines=Array.from({length:100},(_,i)=>custom[i]||[saved[`reason${i+1}`],o[`reason_${i+1}`],defaultReasons[i]].find(Boolean)||defaultReasons[i]);
         reasonIndex=0;premiumReasonIndex=0;
         set("reasonText",lines[0]);set("reasonCounter","Motivo 1 de 100");showPremiumReason();
+        // ESSENCIAL ENTREGUE: estes recursos são liberados SOMENTE após
+        // a API devolver um pedido pago do plano Essencial.
+        if (plan === "essencial") {
+          document.body.classList.add("essential-delivered");
+
+          // A história, os 10 motivos e a carta ficam totalmente interativos.
+          ["storySection", "motivos", "carta"].forEach(id => {
+            $(id)?.classList.remove("is-locked");
+          });
+
+          // Não mostrar propagandas/cadeados dos planos superiores
+          // dentro do presente comprado pelo cliente.
+          ["momentos", "momentos-grid", "surpresa"].forEach(id => {
+            const section = $(id);
+            if (section) section.hidden = true;
+          });
+          document.querySelectorAll(".navbar nav a").forEach(link => {
+            if (["#momentos", "#surpresa"].includes(link.getAttribute("href"))) {
+              link.hidden = true;
+            }
+          });
+
+          // Trocar os três cards genéricos pela história do próprio cliente.
+          // textContent evita interpretar a personalização como código HTML.
+          const container = $("storySection")?.querySelector(".preview-story-demo");
+          if (container) {
+            const card = document.createElement("article");
+            card.className = "preview-story-card";
+            const heart = document.createElement("span");
+            heart.textContent = "♥";
+            const content = document.createElement("div");
+            const caption = document.createElement("small");
+            caption.textContent = "NOSSA HISTÓRIA";
+            const heading = document.createElement("h3");
+            heading.textContent = "Como tudo começou";
+            const paragraph = document.createElement("p");
+            paragraph.textContent = String(story || "").trim() ||
+              "Nossa história é feita de pequenos momentos que se tornaram especiais.";
+            content.append(caption, heading, paragraph);
+            card.append(heart, content);
+            container.replaceChildren(card);
+          }
+
+          // O Essencial recebe 10 motivos, revelados um por vez.
+          const counterLabel = $("motivos")?.querySelector(".eyebrow");
+          if (counterLabel) counterLabel.textContent = "10 MOTIVOS PARA TE AMAR";
+          reasonIndex = 0;
+          set("reasonText", lines[0]);
+          set("reasonCounter", "Motivo 1 de 10");
+          $("nextReason").onclick = () => {
+            reasonIndex = (reasonIndex + 1) % 10;
+            set("reasonText", lines[reasonIndex]);
+            set("reasonCounter", `Motivo ${reasonIndex + 1} de 10`);
+          };
+
+          // Permitir a abertura e o fechamento da carta no Essencial pago.
+          $("envelope").onclick = () => {
+            $("envelope").classList.toggle("opened");
+            $("letterPaper").classList.toggle("open");
+          };
+          $("letterText").style.whiteSpace = "pre-wrap";
+        }
         welcomeEnter.disabled=false;
         welcomeEnter.textContent="Entrar no nosso mundo ♥";
         welcomeNote.textContent=musicFile?"♫ Toque para abrir a surpresa com música.":"♥ Toque para abrir sua surpresa.";
@@ -1731,6 +1793,40 @@ body.delivered-site .checkout-final,
 body.delivered-site .px-checkout,
 body.delivered-site .px-features,
 body.delivered-site [data-upgrade]{display:none !important}
+</style>
+
+<style id="essencial-entregue-v2-css">
+/* Estes ajustes só aparecem quando um pedido Essencial PAGO foi carregado. */
+body.delivered-site.essential-delivered #motivos .reason-grid {
+  display: none !important;
+}
+body.delivered-site.essential-delivered #motivos {
+  min-height: 430px !important;
+}
+body.delivered-site.essential-delivered #historia .preview-story-demo {
+  width: min(730px, 100%);
+  margin-inline: auto;
+}
+body.delivered-site.essential-delivered #historia .preview-story-card p {
+  white-space: pre-wrap;
+  font-size: clamp(14px, 2vw, 17px);
+  line-height: 1.85;
+  color: #d2c2c8;
+  overflow-wrap: anywhere;
+}
+body.delivered-site.essential-delivered #historia .preview-story-card h3 {
+  font-size: clamp(22px, 3vw, 30px);
+}
+body.delivered-site.essential-delivered #storySection .locked-overlay,
+body.delivered-site.essential-delivered #motivos .locked-overlay,
+body.delivered-site.essential-delivered #carta .locked-overlay {
+  display: none !important;
+}
+@media(max-width:600px) {
+  body.delivered-site.essential-delivered #historia .preview-story-card {
+    padding: 22px 18px;
+  }
+}
 </style>
 </body>
 </html>
