@@ -1180,7 +1180,10 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
       <p class="preview-message" id="loveMessage">Um cantinho feito especialmente para vocês.</p>
       <div class="hero-photo empty" id="heroPhoto"><span>♥</span></div>
       <div class="preview-date" id="loveDate"></div>
-      <button class="primary-btn" id="openMusic">Entrar no nosso mundo ♥</button>
+      <button class="primary-btn" id="openMusic" type="button">
+        <span class="aes-entry-label">Entrar no nosso mundo ♥</span>
+        <span id="coupleDateButton" class="aes-entry-date" hidden></span>
+      </button>
       <div class="scroll-hint"><i></i>deslize</div>
     </div>
   </section>
@@ -1461,13 +1464,29 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
   set("loveMessage",current.loveMessage);
   set("musicName",current.loveMusic||"Nossa música");
   set("loveStory",current.loveStory);
-  const previewDateFallback = current.loveDate || sessionStorage.getItem("amorEmSitePreviewDate") || "";
-  if(previewDateFallback){
-    const d=new Date(previewDateFallback+"T00:00:00");
-    if(!isNaN(d))set("loveDate",d.toLocaleDateString("pt-BR"));
-  }else{
-    set("loveDate","Nossa data especial");
-  }
+  // Sempre obtemos a data dos dados do pedido pago; nao da pre-visualizacao local.
+  const setCoupleDate = raw => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(raw || "").trim());
+    let formatted = "";
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const d = new Date(year, month - 1, day);
+      if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+        formatted = `${match[3]}/${match[2]}/${match[1]}`;
+      }
+    }
+    const dateLabel = $("coupleDateButton");
+    if (dateLabel) {
+      dateLabel.textContent = formatted ? `Nossa data: ${formatted}` : "";
+      dateLabel.hidden = !formatted;
+    }
+    set("loveDate", "Nossa data especial");
+  };
+  const previewDateFallback = paid ? "" :
+    (current.loveDate || sessionStorage.getItem("amorEmSitePreviewDate") || "");
+  setCoupleDate(previewDateFallback);
   set("surpriseText",current.loveSurprise);
   set("letterSignature",current.yourName?`Com todo meu amor,\n${current.yourName} ♥`:"Com todo meu amor, ♥");
 
@@ -1728,7 +1747,7 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
           const d=new Date(String(date).slice(0,10)+"T00:00:00");
           if(!Number.isNaN(d.getTime())){
             const formatted=d.toLocaleDateString("pt-BR");
-            set("loveDate",formatted);set("premiumDate",formatted);
+            setCoupleDate(date);set("premiumDate",formatted);
             set("premiumDays","+"+Math.max(1,Math.floor((Date.now()-d.getTime())/86400000)+1));
           }
         }
@@ -1843,6 +1862,22 @@ body.delivered-site:not(.site-entered) .site-welcome{display:flex}
 
 })();
 </script>
+
+<style id="aes-couple-date-button-css">
+/* Data especial dentro do botão, em prévias e sites entregues. */
+#openMusic {text-align:center;white-space:normal;line-height:1.25;}
+#openMusic .aes-entry-label {display:block;}
+#openMusic .aes-entry-date {
+  display:block;
+  margin-top:6px;
+  font-size:clamp(10px,1.4vw,12px);
+  font-weight:600;
+  letter-spacing:.08em;
+  line-height:1.45;
+  color:rgba(255,255,255,.88);
+}
+#openMusic .aes-entry-date[hidden] {display:none!important;}
+</style>
 
 <style id="single-reason-only">
 /* Apenas um motivo visível por vez. A lista completa continua existindo nos dados

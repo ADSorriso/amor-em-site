@@ -195,6 +195,17 @@
     if (!LIMITS[plan]) return;
     if (currentPlan !== plan) reset(plan);
 
+    // A data do casal pode ser escolhida no Essencial também.
+    // O script original esconde esse campo; reexibimos após a escolha do plano.
+    const dateField = modal.querySelector('[data-pem="date"]');
+    if (dateField) dateField.style.display = '';
+    const dateInput = document.getElementById('pemDate');
+    if (dateInput) dateInput.required = plan !== 'essencial';
+    const dateLabel = modal.querySelector('label[for="pemDate"]');
+    if (dateLabel) dateLabel.textContent = plan === 'essencial'
+      ? '📅 Data especial do casal (opcional)'
+      : 'Data especial *';
+
     // No Essencial a história, a carta e até 10 motivos também fazem parte do produto.
     if (plan === 'essencial') {
       modal.querySelectorAll('[data-pem="story"]').forEach(el => { el.style.display = ''; });
